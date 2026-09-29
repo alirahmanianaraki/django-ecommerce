@@ -1,0 +1,132 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
+
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <div class="w-12 h-12 mx-auto rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-4">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800">
+                {% if form.instance.pk %}Edit Address{% else %}Add Address{% endif %}
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">
+                {% if form.instance.pk %}
+                    Update your saved shipping address
+                {% else %}
+                    Save a shipping address for faster checkout
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="POST" class="space-y-5">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Address Title -->
+            <div>
+                <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                    Address Label <span class="text-red-500">*</span>
+                </label>
+                {{ form.title }}
+                <p class="text-xs text-slate-400 mt-1">e.g., "Home", "Office"</p>
+                {% if form.title.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Full Name -->
+            <div>
+                <label for="{{ form.full_name.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                    Full Name <span class="text-red-500">*</span>
+                </label>
+                {{ form.full_name }}
+                {% if form.full_name.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.full_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                    Address <span class="text-red-500">*</span>
+                </label>
+                {{ form.description }}
+                <p class="text-xs text-slate-400 mt-1">Street address, building number, apartment, etc.</p>
+                {% if form.description.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- City + State (two columns) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                        City <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.city }}
+                    {% if form.city.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.city.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.state.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                        State / Province <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.state }}
+                    {% if form.state.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.state.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Postal Code + Country (two columns) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.postal_code.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                        Postal Code <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.postal_code }}
+                    {% if form.postal_code.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.postal_code.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.country.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
+                        Country <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.country }}
+                    {% if form.country.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ form.country.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-end gap-3 pt-6 border-t border-slate-200">
+                <a href="{% url 'users:profile' %}"
+                   class="px-5 py-2.5 border border-slate-300 rounded text-slate-700 font-medium hover:bg-slate-50 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+                    {% if form.instance.pk %}Update Address{% else %}Save Address{% endif %}
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

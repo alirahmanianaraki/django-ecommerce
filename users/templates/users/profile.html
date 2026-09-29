@@ -1,0 +1,157 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
+
+        <!-- Header -->
+        <div class="flex items-center gap-5 pb-6 mb-6 border-b border-gray-200">
+            {% if user.profile.image %}
+                <img src="{{ user.profile.image.url }}" alt="Avatar"
+                     class="w-20 h-20 rounded-full object-cover border-2 border-gray-200">
+            {% else %}
+                <div class="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                    {{ user.username|first|upper }}
+                </div>
+            {% endif %}
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">
+                    {{ user.get_full_name|default:user.username }}
+                </h1>
+                <p class="text-sm text-gray-500">@{{ user.username }}</p>
+                {% if user.is_staff %}
+                    <span class="inline-block mt-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium">
+                        Staff
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Account Information -->
+        <div class="space-y-4">
+            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Account Information</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-gray-50 rounded p-4">
+                    <p class="text-xs text-gray-500 mb-1">Username</p>
+                    <p class="text-sm font-medium text-gray-800">{{ user.username }}</p>
+                </div>
+
+                <div class="bg-gray-50 rounded p-4">
+                    <p class="text-xs text-gray-500 mb-1">Email</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        {{ user.email|default:"—" }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 rounded p-4">
+                    <p class="text-xs text-gray-500 mb-1">First Name</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        {{ user.first_name|default:"—" }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 rounded p-4">
+                    <p class="text-xs text-gray-500 mb-1">Last Name</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        {{ user.last_name|default:"—" }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 rounded p-4">
+                    <p class="text-xs text-gray-500 mb-1">Joined</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        {{ user.date_joined|date:"F j, Y" }}
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 rounded p-4">
+                    <p class="text-xs text-gray-500 mb-1">Last Login</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        {{ user.last_login|date:"F j, Y"|default:"Never" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ Address Section -->
+        <div class="space-y-4 mt-8">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Shipping Address</h2>
+                <a href="{% url 'users:add_address' %}"
+                   class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                    {% if user_address %}
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Edit
+                    {% else %}
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add Address
+                    {% endif %}
+                </a>
+            </div>
+
+            {% if user_address %}
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/30">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-blue-900">{{ user_address.title }}</span>
+                                <span class="text-[10px] uppercase tracking-wider text-blue-500 bg-blue-100 px-2 py-0.5 rounded-full font-semibold">
+                                    Primary
+                                </span>
+                            </div>
+                            <p class="text-sm font-medium text-slate-800">{{ user_address.full_name }}</p>
+                            <p class="text-sm text-slate-600 mt-0.5">{{ user_address.description }}</p>
+                            <p class="text-sm text-slate-600">
+                                {{ user_address.city }}, {{ user_address.state }} {{ user_address.postal_code }}
+                            </p>
+                            <p class="text-sm text-slate-600">{{ user_address.country }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                        <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-slate-600">No address saved yet</p>
+                    <p class="text-xs text-slate-400 mt-1 mb-4">Add a shipping address for faster checkout</p>
+                    <a href="{% url 'users:add_address' %}"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add Address
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
+            <a href="{% url 'myapp:index' %}"
+               class="px-5 py-2.5 border border-gray-300 rounded text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                Back
+            </a>
+            <a href="{% url 'users:modify_user_info' %}"
+               class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition-colors">
+                Edit Profile
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
