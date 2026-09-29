@@ -1,5 +1,7 @@
 # VoltPC — Django E-Commerce Platform
-
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-6.1-green)](https://www.djangoproject.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
 <img width="1767" height="865" alt="Django-Ecommerece-Ali-Rahmanianaraki" src="https://github.com/user-attachments/assets/cfe112fc-8338-4b8f-ab4d-1d2ca26b404d" />
 
 
