@@ -1,7 +1,3 @@
-Here's a full-fledged README description for your Django e-commerce project. It's structured the way a real GitHub README would be — with clear sections, tech stack, features, setup instructions, and architecture notes.
-
----
-
 # VoltPC — Django E-Commerce Platform
 
 <img width="1767" height="865" alt="Django-Ecommerece-Ali-Rahmanianaraki" src="https://github.com/user-attachments/assets/cfe112fc-8338-4b8f-ab4d-1d2ca26b404d" />
