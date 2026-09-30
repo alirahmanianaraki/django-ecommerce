@@ -1,3 +1,5 @@
+from django.contrib.postgres.search import SearchVectorField, SearchVector
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -50,6 +52,22 @@ class Product(models.Model):
         blank=True,
         related_name='products'
     )
+    search_vector = SearchVectorField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            # Full-text search index
+            GinIndex(
+                fields=['search_vector'],
+                name='product_search_vector_idx',
+            ),
+            # Trigram search index
+            GinIndex(
+                fields=['title'],
+                name='product_title_trgm_idx',
+                opclasses=['gin_trgm_ops']
+            )
+        ]
 
     def get_absolute_url(self):
         return reverse('myapp:detail', kwargs={
@@ -66,6 +84,10 @@ class Product(models.Model):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
+        # Filling the search_vector field
+        Product.objects.filter(pk=self.pk).update(
+            search_vector=SearchVector('title', weight='A') + SearchVector('description', weight='B')
+        )
 
     def __str__(self):
         return f'{self.title}--id: {self.pk}'
