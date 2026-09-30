@@ -14,6 +14,9 @@ class Wishlist(models.Model):
         blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.user} Wishlist"
+
 class WishlistItems(models.Model):
     product = models.ForeignKey(
         Product,
@@ -24,3 +27,6 @@ class WishlistItems(models.Model):
         Wishlist,
         on_delete=models.CASCADE
     )
+
+    def __str__(self):
+        return f"{self.wishlist} Product {self.product}"
