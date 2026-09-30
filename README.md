@@ -21,6 +21,21 @@ This project was built as a hands-on learning exercise to explore real-world Dja
 - **Product images** — multiple images per product with thumbnail display
 - **Search & filter ready** — the data model supports category/tag filtering
 
+### 🔍 Search
+- **Full-text search** — uses PostgreSQL's FTS engine with English language stemming for relevance-ranked results
+
+- **Typo tolerance** — combines trigram similarity (titles) with FTS, so misspelled queries still find products
+
+- **Weighted ranking** — results ordered by relevance score, then by similarity
+
+- **Input sanitization** — strips control characters to prevent malformed queries
+
+- **Length validation** — enforces a minimum of 3 characters and caps at 100 to prevent abuse and trivial queries
+
+- **Graceful errors** — shows a friendly message when the query is too short, instead of a broken page
+
+- **Optimized query** — uses the pre-indexed search_vector field for speed on large catalogs
+
 ### 🛒 Shopping Cart
 - **Session-based cart** — persists across page navigation
 - **Add / update / remove items** — all via AJAX (no page reloads)
