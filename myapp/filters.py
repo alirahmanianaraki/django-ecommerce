@@ -43,9 +43,22 @@ def apply_product_filters(request, queryset, default_sort='newest', allow_releva
     }
     if allow_relevance:
         SORT_OPTIONS['relevance'] = '-rank'
+
     chosen_sort = raw_sort or default_sort
+    
+    if chosen_sort == 'relevance' and not allow_relevance and 'rank' not in queryset.query.annotations:
+        chosen_sort = 'newest'
+
     sort_field = SORT_OPTIONS.get(chosen_sort, '-id')
-    queryset = queryset.order_by(sort_field)
+
+    # fall back to -id.
+    if sort_field == '-rank':
+        try:
+            queryset = queryset.order_by(sort_field)
+        except Exception:
+            queryset = queryset.order_by('-id')
+    else:
+        queryset = queryset.order_by(sort_field)
 
     context = {
         'min_price': raw_min,

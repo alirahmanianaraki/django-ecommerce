@@ -24,7 +24,7 @@ class Tag(models.Model):
             base_slug = slugify(self.name)
             slug = base_slug
             counter = 1
-            while Tag.objects.filter(slug=slug).exits():
+            while Tag.objects.filter(slug=slug).exists():
                 slug = f'{base_slug}-{counter}'
                 counter = counter + 1
             self.slug = slug

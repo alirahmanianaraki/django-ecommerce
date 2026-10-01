@@ -1,8 +1,10 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from .cart import Cart
 
 # Create your views here.
+@require_POST
 def add_to_cart(request):
     cart = Cart(request)
     if request.method == 'POST':
@@ -19,7 +21,7 @@ def cart_overview(request):
                   {
                       'cart': cart
                   })
-
+@require_POST
 def update_cart(request):
     cart = Cart(request)
     if request.method == 'POST':
@@ -28,6 +30,7 @@ def update_cart(request):
         cart.update(product_id=product_id, product_quantity=product_quantity)
         return JsonResponse({'Message': 'Product updated'})
 
+@require_POST
 def delete_cart(request):
     cart = Cart(request)
     if request.method == 'POST':
