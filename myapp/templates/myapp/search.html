@@ -1,7 +1,7 @@
 {% extends 'myapp/base.html' %}
 
 {% block title %}
-    {% if query %}Search results for "{{ query }}"{% else %}Search{% endif %} - VoltPC
+    {% if query and not error %}Search results for "{{ query }}"{% else %}Search{% endif %} - VoltPC
 {% endblock %}
 
 {% block body %}
@@ -9,59 +9,27 @@
     <div class="max-w-7xl mx-auto px-4 py-10">
 
         <!-- Header -->
-        <div class="text-center mb-8">
+        <div class="text-center mb-10">
             <span class="text-xs font-semibold uppercase tracking-wider text-blue-600">Search</span>
             <h1 class="text-4xl font-bold text-slate-800 tracking-tight mt-1">
-                {% if query %}
+                {% if query and not error %}
                     Results for "{{ query }}"
                 {% else %}
                     Find what you need
                 {% endif %}
             </h1>
-            {% if query %}
+            {% if query and not error %}
                 <p class="text-slate-500 text-sm mt-2">
                     {{ results|length }} product{{ results|length|pluralize }} found
                 </p>
             {% else %}
                 <p class="text-slate-500 text-sm mt-2">
-                    Search our catalog by product name or description
+                    Use the search bar to find products by name or description.
                 </p>
             {% endif %}
         </div>
 
-        <!-- Search form -->
-        <form method="get" action="{% url 'myapp:search' %}" class="mb-6">
-            <div class="relative max-w-2xl mx-auto">
-                <input type="text"
-                       name="q"
-                       value="{{ query }}"
-                       placeholder="Search CPUs, GPUs, RAM..."
-                       autofocus
-                       class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl
-                              text-slate-800 placeholder-slate-400
-                              shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                              transition-all">
-                <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-
-                {% if query %}
-                <a href="{% url 'myapp:search' %}"
-                   class="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full
-                          flex items-center justify-center text-slate-400
-                          hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                   title="Clear search">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </a>
-                {% endif %}
-            </div>
-        </form>
-
-        <!-- ✅ Validation error message (e.g., query too short) -->
+        <!-- Validation error (e.g., query too short) -->
         {% if error %}
         <div class="max-w-2xl mx-auto mb-8">
             <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
@@ -74,112 +42,109 @@
         </div>
         {% endif %}
 
-        {% if results %}
-        <!-- Results Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {% for product in results %}
-            <a href="{{ product.get_absolute_url }}"
-               class="group relative bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/60 hover:border-blue-300 shadow-sm hover:shadow-2xl hover:shadow-blue-200/60 transition-all duration-300 hover:-translate-y-1.5">
+        {% if query and not error %}
 
-                <!-- Image -->
-                <div class="relative aspect-square bg-gradient-to-br from-slate-100 to-blue-50 overflow-hidden">
-                    {% with first_image=product.product_images.first %}
-                        {% if first_image %}
-                            <img src="{{ first_image.image.url }}"
-                                 alt="{{ product.title }}"
-                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                        {% else %}
-                            <div class="w-full h-full flex items-center justify-center text-slate-300">
-                                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
+        <!-- ============================================
+             TWO-COLUMN LAYOUT: SIDEBAR + RESULTS
+             ============================================ -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+            <!-- Filter Sidebar -->
+            <aside class="lg:col-span-1">
+                {% include 'myapp/partials/filter_sidebar.html' %}
+            </aside>
+
+            <!-- Results -->
+            <section class="lg:col-span-3">
+                {% if results %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {% for product in results %}
+                        <a href="{{ product.get_absolute_url }}"
+                           class="group relative bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/60 hover:border-blue-300 shadow-sm hover:shadow-2xl hover:shadow-blue-200/60 transition-all duration-300 hover:-translate-y-1.5">
+
+                            <!-- Image -->
+                            <div class="relative aspect-square bg-gradient-to-br from-slate-100 to-blue-50 overflow-hidden">
+                                {% with first_image=product.product_images.first %}
+                                    {% if first_image %}
+                                        <img src="{{ first_image.image.url }}"
+                                             alt="{{ product.title }}"
+                                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+
+                                <div class="absolute inset-0 bg-gradient-to-t from-blue-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                <span class="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm
+                                             {% if product.stock > 0 %}
+                                                 bg-emerald-500/90 text-white
+                                             {% else %}
+                                                 bg-red-500/90 text-white
+                                             {% endif %}">
+                                    {% if product.stock > 0 %}In Stock{% else %}Sold Out{% endif %}
+                                </span>
                             </div>
-                        {% endif %}
-                    {% endwith %}
 
-                    <!-- Gradient overlay on hover -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-blue-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <!-- Details -->
+                            <div class="p-4">
+                                <h3 class="text-base font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                                    {{ product.title }}
+                                </h3>
+                                <p class="text-sm text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                                    {{ product.description }}
+                                </p>
 
-                    <!-- Stock Badge -->
-                    <span class="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm
-                                 {% if product.stock > 0 %}
-                                     bg-emerald-500/90 text-white
-                                 {% else %}
-                                     bg-red-500/90 text-white
-                                 {% endif %}">
-                        {% if product.stock > 0 %}In Stock{% else %}Sold Out{% endif %}
-                    </span>
-                </div>
-
-                <!-- Details -->
-                <div class="p-4">
-                    <h3 class="text-base font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                        {{ product.title }}
-                    </h3>
-                    <p class="text-sm text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                        {{ product.description }}
-                    </p>
-
-                    <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
-                        <div>
-                            <span class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Price</span>
-                            <p class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                ${{ product.price }}
-                            </p>
-                        </div>
-                        <span class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-110 transition-transform">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                            </svg>
-                        </span>
+                                <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                                    <div>
+                                        <span class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Price</span>
+                                        <p class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                            ${{ product.price }}
+                                        </p>
+                                    </div>
+                                    <span class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
                     </div>
-                </div>
-            </a>
-            {% endfor %}
+
+                {% else %}
+                    <!-- Empty state: search succeeded, filters killed all results -->
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-16 text-center">
+                        <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-5">
+                            <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">No products match these filters</h2>
+                        <p class="text-slate-500 mb-8">
+                            Try widening your price range or clearing some filters.
+                        </p>
+                        <a href="?q={{ query }}"
+                           class="inline-flex items-center gap-2 px-6 py-3 rounded-xl
+                                  bg-white text-slate-700 border border-slate-200 font-semibold
+                                  hover:bg-slate-50 transition-colors">
+                            Clear filters
+                        </a>
+                    </div>
+                {% endif %}
+            </section>
+
         </div>
 
-        {% elif query and not error %}
-        <!-- Empty State (search returned nothing, no validation error) -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-16 text-center max-w-lg mx-auto">
-            <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-6">
-                <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </div>
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">No products found</h2>
-            <p class="text-slate-500 mb-2">
-                We couldn't find anything matching <span class="font-semibold text-slate-700">"{{ query }}"</span>.
-            </p>
-            <p class="text-slate-400 text-sm mb-8">
-                Try a different search term or check your spelling.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="{% url 'myapp:search' %}"
-                   class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-                          bg-white text-slate-700 border border-slate-200 font-semibold
-                          hover:bg-slate-50 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                    Clear Search
-                </a>
-                <a href="{% url 'myapp:index' %}"
-                   class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-                          bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold
-                          shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-0.5
-                          transition-all duration-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Browse All Products
-                </a>
-            </div>
-        </div>
-
-        {% elif not error %}
-        <!-- Initial State (no query yet, no error) -->
+        {% elif not query %}
+        <!-- Initial state (no query yet) -->
         <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-16 text-center max-w-lg mx-auto">
             <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-6">
                 <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -189,7 +154,7 @@
             </div>
             <h2 class="text-2xl font-bold text-slate-800 mb-2">Start searching</h2>
             <p class="text-slate-500 mb-8">
-                Type a product name, category, or keyword above to find what you need.
+                Type a product name, category, or keyword in the search bar above to find what you need.
             </p>
             <a href="{% url 'myapp:index' %}"
                class="inline-flex items-center gap-2 px-6 py-3 rounded-xl

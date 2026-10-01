@@ -8,14 +8,17 @@ from django.contrib.postgres.search import (
 import re
 from django.db.models import F, Q
 from .models import ProductImage, Product, Tag
+from .filters import apply_product_filters
 
 # Create your views here.
 def index(request):
-    products = Product.objects.all()
-    return render(request, 'myapp/index.html', 
-                  {
-                      'products': products,
-                  })
+    base_queryset = Product.objects.all()
+    products, filter_context = apply_product_filters(request, base_queryset)
+    context = {
+        'products': products,
+        **filter_context
+    }
+    return render(request, 'myapp/index.html', context)
 
 def detail(request, slug):
     product = get_object_or_404(Product,
@@ -40,7 +43,7 @@ def search(request):
 
     query = request.GET.get('q', '').strip()
     query = re.sub(r'[\x00-\x08\x0b-\x1f\x7f]', '', query)
-    results = Product.objects.none()
+    base_queryset = Product.objects.none()
     error = None
 
     # Cap length
@@ -53,20 +56,22 @@ def search(request):
     elif query:
         search_query = SearchQuery(query, config='english')
 
-        results = (
+        base_queryset = (
             Product.objects
             .annotate(
                 rank=SearchRank(F('search_vector'), search_query),
                 similarity=TrigramSimilarity('title', query),
             )
             .filter(Q(rank__gte=0.1) | Q(similarity__gt=0.2))
-            .order_by('-rank', '-similarity')
             .distinct()
         )
+
+    results, filter_context = apply_product_filters(request, base_queryset, default_sort='relevance', allow_relevance=True)
 
     return render(request, 'myapp/search.html',
                   {
                       'query': query,
                       'results': results,
-                      'error': error
+                      'error': error,
+                      **filter_context,
                   })

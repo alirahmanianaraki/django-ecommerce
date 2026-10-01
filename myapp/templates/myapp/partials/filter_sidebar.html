@@ -1,0 +1,72 @@
+<!-- myapp/templates/myapp/partials/filter_sidebar.html -->
+
+<form method="get" action=""
+      class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-5 space-y-6">
+
+    <!-- ✅ Preserve search query across filter submissions -->
+    {% if request.GET.q %}
+    <input type="hidden" name="q" value="{{ request.GET.q }}">
+    {% endif %}
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Filters</h2>
+        <a href="{{ request.path }}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}"
+           class="text-xs font-medium text-blue-600 hover:underline">
+            Clear
+        </a>
+    </div>
+
+    <!-- Price Range -->
+    <div>
+        <h3 class="text-sm font-semibold text-slate-700 mb-2">Price</h3>
+        <div class="flex items-center gap-2">
+            <input type="number" name="min_price" value="{{ min_price }}"
+                   placeholder="Min" min="0"
+                   class="w-full px-3 py-2 border border-gray-300 rounded
+                          focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="text-slate-400">–</span>
+            <input type="number" name="max_price" value="{{ max_price }}"
+                   placeholder="Max" min="0"
+                   class="w-full px-3 py-2 border border-gray-300 rounded
+                          focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+    </div>
+
+    <!-- In Stock -->
+    <div>
+        <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="in_stock" value="1"
+                   {% if in_stock %}checked{% endif %}
+                   class="w-4 h-4 rounded border-gray-300 text-blue-600
+                          focus:ring-blue-500">
+            <span class="text-sm text-slate-700">In stock only</span>
+        </label>
+    </div>
+
+    <!-- Sort -->
+    <div>
+        <h3 class="text-sm font-semibold text-slate-700 mb-2">Sort by</h3>
+        <select name="sort"
+                class="w-full px-3 py-2 border border-gray-300 rounded
+                       focus:outline-none focus:ring-2 focus:ring-blue-500">
+            {# ✅ Show Relevance only when the caller allows it (search page) #}
+            {% if allow_relevance %}
+            <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Relevance</option>
+            {% endif %}
+            <option value="newest"     {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="oldest"     {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+            <option value="price_low"  {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+        </select>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit"
+            class="w-full py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600
+                   text-white font-semibold shadow-md shadow-blue-500/30
+                   hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5
+                   transition-all duration-300">
+        Apply Filters
+    </button>
+</form>
