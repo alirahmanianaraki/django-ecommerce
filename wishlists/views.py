@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from myapp.models import Product
+from myapp.pagination import paginate
 from .models import Wishlist, WishlistItems
 from .wishlist import WishlistService
 
@@ -57,9 +58,17 @@ def wishlist_overview(request):
         messages.error(request, 'Register or Login first')
         return redirect('users:register')
     user_wishlist = WishlistService(user=request.user, request=request)
-    items = WishlistItems.objects.filter(wishlist=user_wishlist.wishlist).select_related('product').prefetch_related('product__product_images', 'product__tag')
+    items_qs = (
+        WishlistItems.objects
+        .filter(wishlist=user_wishlist.wishlist)
+        .select_related('product')
+        .prefetch_related('product__product_images', 'product__tag')
+        .order_by('-id')
+        )
+    page_obj, pagination_context = paginate(request, items_qs)
     return render(request, 'wishlists/wishlist_overview.html',
                   {
-                      'items': items
+                      'page_obj': page_obj,
+                      **pagination_context,
                   })
 

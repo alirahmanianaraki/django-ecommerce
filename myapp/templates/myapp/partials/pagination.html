@@ -1,0 +1,87 @@
+{% load pagination_tags %}
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+    <!-- Result count -->
+    <p class="text-sm text-slate-500">
+        Showing
+        <span class="font-semibold text-slate-700">{{ page_obj.start_index }}</span>–<span class="font-semibold text-slate-700">{{ page_obj.end_index }}</span>
+        of
+        <span class="font-semibold text-slate-700">{{ page_obj.paginator.count }}</span>
+        item{{ page_obj.paginator.count|pluralize }}
+    </p>
+
+    <!-- Page navigation -->
+    <div class="flex items-center gap-1">
+
+        <!-- Previous -->
+        {% if page_obj.has_previous %}
+            <a href="{% url_replace page=page_obj.previous_page_number %}"
+               class="w-9 h-9 flex items-center justify-center rounded-lg
+                      bg-white border border-slate-200 text-slate-600
+                      hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600
+                      transition-colors"
+               title="Previous page">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+        {% else %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                         bg-slate-100 text-slate-300 cursor-not-allowed">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </span>
+        {% endif %}
+
+        <!-- Page numbers -->
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                {# Current page — highlighted #}
+                <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                             bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold
+                             shadow-md shadow-blue-500/30">
+                    {{ num }}
+                </span>
+
+            {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                {# First, last, or within ±2 of current — clickable #}
+                <a href="{% url_replace page=num %}"
+                   class="w-9 h-9 flex items-center justify-center rounded-lg
+                          bg-white border border-slate-200 text-slate-600 font-medium
+                          hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600
+                          transition-colors">
+                    {{ num }}
+                </a>
+
+            {% elif num == 2 or num == page_obj.paginator.num_pages|add:"-1" %}
+                {# Just before/after the visible window — show ellipsis #}
+                <span class="w-9 h-9 flex items-center justify-center text-slate-400">…</span>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Next -->
+        {% if page_obj.has_next %}
+            <a href="{% url_replace page=page_obj.next_page_number %}"
+               class="w-9 h-9 flex items-center justify-center rounded-lg
+                      bg-white border border-slate-200 text-slate-600
+                      hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600
+                      transition-colors"
+               title="Next page">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        {% else %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                         bg-slate-100 text-slate-300 cursor-not-allowed">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </span>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}

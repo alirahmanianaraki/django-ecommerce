@@ -9,14 +9,17 @@ import re
 from django.db.models import F, Q
 from .models import ProductImage, Product, Tag
 from .filters import apply_product_filters
+from .pagination import paginate
 
 # Create your views here.
 def index(request):
     base_queryset = Product.objects.all()
-    products, filter_context = apply_product_filters(request, base_queryset)
+    products_qs, filter_context = apply_product_filters(request, base_queryset)
+    page_obj, pagination_context= paginate(request, products_qs)
     context = {
-        'products': products,
-        **filter_context
+        'page_obj': page_obj,
+        **filter_context,
+        **pagination_context
     }
     return render(request, 'myapp/index.html', context)
 
@@ -30,11 +33,18 @@ def detail(request, slug):
 
 def tag(request, slug):
     tag = get_object_or_404(Tag, slug=slug)
-    related_products = Product.objects.filter(tag=tag).prefetch_related('product_images')
+    related_products_qs = (
+        Product.objects
+        .filter(tag=tag)
+        .prefetch_related('product_images')
+        .order_by('-id')
+        )
+    page_obj, pagination_context = paginate(request, related_products_qs)
     return render(request,'myapp/tagged-products.html',
                   {
-                      'related_products': related_products,
-                      'tag': tag
+                      'page_obj': page_obj,
+                      'tag': tag,
+                      **pagination_context
                   })
 
 def search(request):
@@ -66,12 +76,13 @@ def search(request):
             .distinct()
         )
 
-    results, filter_context = apply_product_filters(request, base_queryset, default_sort='relevance', allow_relevance=True)
-
+    results_qs, filter_context = apply_product_filters(request, base_queryset, default_sort='relevance', allow_relevance=True)
+    page_obj, pagination_context = paginate(request, results_qs)
     return render(request, 'myapp/search.html',
                   {
                       'query': query,
-                      'results': results,
+                      'page_obj': page_obj,
                       'error': error,
                       **filter_context,
+                      **pagination_context
                   })

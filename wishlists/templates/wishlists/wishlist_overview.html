@@ -10,8 +10,8 @@
                 <span class="text-xs font-semibold uppercase tracking-wider text-rose-600">Saved</span>
                 <h1 class="text-4xl font-bold text-slate-800 tracking-tight mt-1">My Wishlist</h1>
                 <p class="text-slate-500 text-sm mt-1">
-                    {% if items %}
-                        {{ items|length }} item{{ items|length|pluralize }} saved for later
+                    {% if page_obj %}
+                        {{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }} saved for later
                     {% else %}
                         Nothing saved yet
                     {% endif %}
@@ -26,10 +26,10 @@
             </a>
         </div>
 
-        {% if items %}
+        {% if page_obj %}
         <!-- Wishlist Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {% for item in items %}
+            {% for item in page_obj %}
             <div class="wishlist-item group relative bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/60 hover:border-rose-300 shadow-sm hover:shadow-xl hover:shadow-rose-200/50 transition-all duration-300 hover:-translate-y-1"
                  data-product-id="{{ item.product.id }}">
 
@@ -102,6 +102,8 @@
             {% endfor %}
         </div>
 
+        {% include 'myapp/partials/pagination.html' %}
+
         {% else %}
         <!-- Empty State -->
         <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-16 text-center max-w-lg mx-auto">
@@ -131,7 +133,6 @@
 
 <!-- ========== Remove from Wishlist (AJAX) ========== -->
 <script>
-    // Small toast helper (same as the detail page)
     function showToast(message, type) {
         const bg = type === 'success' ? 'bg-emerald-500'
                  : type === 'info'    ? 'bg-blue-500'
@@ -156,13 +157,12 @@
 
     $(document).on('click', '.remove-wishlist-btn', function(e) {
         e.preventDefault();
-        e.stopPropagation();   // prevent the card link from triggering
+        e.stopPropagation();
 
         const $btn = $(this);
         const $card = $btn.closest('.wishlist-item');
         const productId = $btn.data('product-id');
 
-        // Prevent double-click
         if ($btn.data('loading')) return;
         $btn.data('loading', true).prop('disabled', true);
 
@@ -174,22 +174,19 @@
                 product_id: productId,
             },
             success: function(json) {
-                // json.deleted is true when a row was removed, false otherwise
                 if (json.deleted) {
                     showToast(json.message || 'Removed from wishlist.', 'success');
 
-                    // Fade out and remove the card
                     $card.addClass('opacity-0 scale-95');
                     setTimeout(function() {
                         $card.remove();
 
-                        // If no items remain, reload to show the empty state
+                        // Reload to reveal next page's items / empty state
                         if ($('.wishlist-item').length === 0) {
                             location.reload();
                         }
                     }, 300);
                 } else {
-                    // Nothing was deleted — item wasn't there. Show info.
                     showToast('Item not in wishlist.', 'info');
                     $btn.data('loading', false).prop('disabled', false);
                 }

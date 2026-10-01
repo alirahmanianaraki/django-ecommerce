@@ -29,18 +29,14 @@
             Products tagged with "{{ tag.name }}"
         </h1>
         <p class="text-slate-500 text-sm mt-1">
-            {% if related_products %}
-                {{ related_products|length }} product{{ related_products|length|pluralize }} found
-            {% else %}
-                No products found
-            {% endif %}
+            {{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }} found
         </p>
     </div>
 
-    {% if related_products %}
+    {% if page_obj %}
     <!-- Product Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {% for product in related_products %}
+        {% for product in page_obj %}
         <a href="{{ product.get_absolute_url }}"
            class="group relative bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/60 hover:border-blue-300 shadow-sm hover:shadow-2xl hover:shadow-blue-200/60 transition-all duration-300 hover:-translate-y-1.5">
 
@@ -101,6 +97,8 @@
         </a>
         {% endfor %}
     </div>
+
+    {% include 'myapp/partials/pagination.html' %}
 
     {% else %}
     <!-- Empty State -->
