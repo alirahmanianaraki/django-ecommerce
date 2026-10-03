@@ -7,13 +7,16 @@ from django.contrib.postgres.search import (
 )
 import re
 from django.db.models import F, Q
-from .models import ProductImage, Product, Tag
 from .filters import apply_product_filters
 from .pagination import paginate
+from .models import (ProductImage, 
+                     Product, 
+                     Tag, 
+                     Category)
 
 # Create your views here.
 def index(request):
-    base_queryset = Product.objects.all()
+    base_queryset = Product.objects.all().prefetch_related('product_images')
     products_qs, filter_context = apply_product_filters(request, base_queryset)
     page_obj, pagination_context= paginate(request, products_qs)
     context = {
@@ -24,8 +27,10 @@ def index(request):
     return render(request, 'myapp/index.html', context)
 
 def detail(request, slug):
-    product = get_object_or_404(Product,
-                                slug=slug)
+    product = get_object_or_404(
+        Product.objects.prefetch_related('category', 'tag', 'product_images'),
+        slug=slug
+        )
     return render(request, 'myapp/detail.html',
                   {
                       'product': product
@@ -73,6 +78,7 @@ def search(request):
                 similarity=TrigramSimilarity('title', query),
             )
             .filter(Q(rank__gte=0.1) | Q(similarity__gt=0.2))
+            .prefetch_related('product_images')
             .distinct()
         )
 
@@ -86,3 +92,26 @@ def search(request):
                       **filter_context,
                       **pagination_context
                   })
+
+def category(request, slug):
+    category_obj = get_object_or_404(Category, slug=slug)
+    descendants_ids = [c.pk for c in category_obj.get_descendants(include_self=True)]
+    base_queryet = (
+        Product.objects
+        .filter(category__in=descendants_ids)
+        .prefetch_related('product_images')
+        .distinct()
+    )
+    product_qs, filter_context = apply_product_filters(request, base_queryet)
+    page_obj, pagination_context = paginate(request, product_qs)
+    subcategories = category_obj.children.all()
+    return render(request, 'myapp/category.html',
+                  {
+                      'category': category_obj,
+                      'subcategories': subcategories,
+                      'page_obj': page_obj,
+                      **filter_context,
+                      **pagination_context,
+                      'active_category': category_obj
+                  })
+

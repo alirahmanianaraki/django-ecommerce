@@ -1,12 +1,16 @@
+from .models import Category
+
 def apply_product_filters(request, queryset, default_sort='newest', allow_relevance=False):
     raw_min = request.GET.get('min_price', '').strip()
     raw_max = request.GET.get('max_price', '').strip()
     raw_in_stock = request.GET.get('in_stock', '')
     raw_sort = request.GET.get('sort', '')
+    raw_category = request.GET.get('category', '').strip()
 
     min_price = None
     max_price = None
     in_stock = raw_in_stock == '1'
+    category = None
 
     try:
         if raw_min:
@@ -34,6 +38,15 @@ def apply_product_filters(request, queryset, default_sort='newest', allow_releva
     if in_stock:
         queryset = queryset.filter(stock__gt=0)
 
+    #category filter
+    if raw_category:
+        try:
+            category = Category.objects.get(slug=raw_category)
+            descendant_ids = [c.pk for c in category.get_descendants(include_self=True)]
+            queryset = queryset.filter(category__in=descendant_ids).distinct()
+        except Category.DoesNotExist:
+            category = None
+
     # Sorting
     SORT_OPTIONS = {
         'price_low': 'price',
@@ -45,7 +58,6 @@ def apply_product_filters(request, queryset, default_sort='newest', allow_releva
         SORT_OPTIONS['relevance'] = '-rank'
 
     chosen_sort = raw_sort or default_sort
-    
     if chosen_sort == 'relevance' and not allow_relevance and 'rank' not in queryset.query.annotations:
         chosen_sort = 'newest'
 
@@ -65,7 +77,8 @@ def apply_product_filters(request, queryset, default_sort='newest', allow_releva
         'max_price': raw_max,
         'in_stock': in_stock,
         'sort': chosen_sort,
-        'allow_relevance': allow_relevance
+        'allow_relevance': allow_relevance,
+        'active_category': category,
     }
 
     return queryset, context

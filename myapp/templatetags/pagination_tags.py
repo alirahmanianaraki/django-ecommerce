@@ -8,5 +8,8 @@ register = template.Library()
 def url_replace(context, **kwargs):
     query = context['request'].GET.copy()
     for key, value in kwargs.items():
-        query[key] = value
+        if value is None:
+            query.pop(key, None)
+        else:
+            query[key] = value
     return '?' + query.urlencode()
