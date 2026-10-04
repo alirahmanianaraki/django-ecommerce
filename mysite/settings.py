@@ -104,6 +104,13 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'voltpc-default',
+        'TIMEOUT': 300,   # 5 minutes
+    }
+}
 
 
 # Password validation

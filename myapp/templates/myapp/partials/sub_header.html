@@ -1,0 +1,110 @@
+{# myapp/templates/myapp/partials/sub_header.html #}
+{# Horizontal strip under the main header.                     #}
+{# On desktop (lg+): a full row of category links.             #}
+{# On mobile: a slim bar with a "Browse categories" button     #}
+{#            that opens a slide-in drawer.                    #}
+
+{# ---------- Desktop sub-header ---------- #}
+<div class="hidden lg:block bg-slate-800 border-t border-slate-700/60 shadow-sm">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center">
+            {% include 'myapp/partials/category_menu.html' %}
+            {# Room for future desktop items, e.g. a right-aligned promo link #}
+        </div>
+    </div>
+</div>
+
+{# ---------- Mobile sub-header ---------- #}
+<div class="lg:hidden bg-slate-800 border-t border-slate-700/60">
+    <div class="container mx-auto px-4">
+        <button type="button"
+                id="category-drawer-open"
+                aria-label="Open categories"
+                aria-controls="category-drawer"
+                aria-expanded="false"
+                class="w-full flex items-center justify-between gap-3 py-2.5
+                       text-sm font-medium text-slate-200
+                       hover:text-cyan-400 transition-colors">
+            <span class="inline-flex items-center gap-2">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                </svg>
+                Browse categories
+            </span>
+            <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+{# ---------- Drawer (mobile only) ---------- #}
+{% include 'myapp/partials/mobile_category_drawer.html' %}
+
+{# ---------- Drawer behaviour ---------- #}
+<script>
+    (function () {
+        "use strict";
+
+        const drawer   = document.getElementById("category-drawer");
+        const backdrop = document.getElementById("category-drawer-backdrop");
+        const openBtn  = document.getElementById("category-drawer-open");
+        const closeBtn = document.getElementById("category-drawer-close");
+
+        if (!drawer || !backdrop || !openBtn) return;
+
+        let previousOverflow = "";
+
+        function openDrawer() {
+            drawer.classList.remove("-translate-x-full");
+            backdrop.classList.remove("opacity-0", "pointer-events-none");
+            openBtn.setAttribute("aria-expanded", "true");
+            previousOverflow = document.body.style.overflow;
+            document.body.style.overflow = "hidden";
+            // Focus the close button for keyboard / screen reader users
+            closeBtn && closeBtn.focus({ preventScroll: true });
+        }
+
+        function closeDrawer() {
+            drawer.classList.add("-translate-x-full");
+            backdrop.classList.add("opacity-0", "pointer-events-none");
+            openBtn.setAttribute("aria-expanded", "false");
+            document.body.style.overflow = previousOverflow || "";
+        }
+
+        openBtn.addEventListener("click", openDrawer);
+        closeBtn && closeBtn.addEventListener("click", closeDrawer);
+        backdrop.addEventListener("click", closeDrawer);
+
+        // Escape closes the drawer
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && !drawer.classList.contains("-translate-x-full")) {
+                closeDrawer();
+            }
+        });
+
+        // Accordion behaviour for parents with children
+        drawer.querySelectorAll(".drawer-cat-toggle").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                const targetId = btn.dataset.target;
+                const panel = document.getElementById(targetId);
+                if (!panel) return;
+
+                const isOpen = !panel.classList.contains("hidden");
+                panel.classList.toggle("hidden");
+
+                btn.setAttribute("aria-expanded", String(!isOpen));
+                const chevron = btn.querySelector(".drawer-cat-chevron");
+                if (chevron) chevron.classList.toggle("rotate-180", !isOpen);
+            });
+        });
+
+        // Auto-close drawer when the viewport grows past the mobile breakpoint
+        // (so it doesn't linger behind the desktop layout if the user resizes).
+        const mq = window.matchMedia("(min-width: 1024px)");
+        mq.addEventListener("change", function (e) {
+            if (e.matches) closeDrawer();
+        });
+    })();
+</script>

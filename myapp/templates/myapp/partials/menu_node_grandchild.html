@@ -1,0 +1,11 @@
+{# myapp/templates/myapp/partials/menu_node_grandchild.html #}
+{# Leaf-level display inside a dropdown. We intentionally stop recursing here; #}
+{# deeper descendants are still discoverable by visiting the category page. #}
+
+<li>
+    <a href="{{ item.category.get_absolute_url }}"
+       class="block px-2 py-1.5 text-sm text-slate-500 hover:text-cyan-700 hover:bg-cyan-50/60 rounded transition-colors
+              {% if item.category.pk in active_category_ids %}text-cyan-700 font-semibold{% endif %}">
+        {{ item.category.name }}
+    </a>
+</li>

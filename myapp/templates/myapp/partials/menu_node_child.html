@@ -1,0 +1,19 @@
+{# myapp/templates/myapp/partials/menu_node_child.html #}
+{# Renders one node inside a dropdown. Recurses via menu_node_grandchild.html #}
+{# when the node itself has children. #}
+
+<li>
+    <a href="{{ item.category.get_absolute_url }}"
+       class="block px-4 py-2 text-sm text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-colors
+            {% if item.category.pk in active_category_ids %}text-cyan-700 bg-cyan-50 font-semibold{% endif %}">
+        {{ item.category.name }}
+    </a>
+
+    {% if item.children %}
+        <ul class="pl-4 pb-1 space-y-0.5 border-l border-slate-100 ml-4">
+            {% for grandchild in item.children %}
+                {% include 'myapp/partials/menu_node_grandchild.html' with item=grandchild active_category_ids=active_category_ids %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+</li>

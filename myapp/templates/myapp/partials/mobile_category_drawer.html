@@ -1,0 +1,113 @@
+{# myapp/templates/myapp/partials/mobile_category_drawer.html #}
+{% load menu_tags %}
+{% menu_categories as menu_categories %}
+{% active_category_ids as active_category_ids %}
+
+{% if menu_categories %}
+
+{# ---------- Backdrop ---------- #}
+<div id="category-drawer-backdrop"
+     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] opacity-0 pointer-events-none
+            transition-opacity duration-200 lg:hidden"></div>
+
+{# ---------- Slide-in panel ---------- #}
+<aside id="category-drawer"
+       role="dialog"
+       aria-modal="true"
+       aria-label="Browse categories"
+       class="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-slate-800 text-slate-200
+              z-[70] -translate-x-full lg:hidden overflow-y-auto shadow-2xl
+              transition-transform duration-250 ease-out">
+
+    {# -------- Drawer header -------- #}
+    <div class="flex items-center justify-between px-4 py-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+        <a href="/" class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <span class="text-lg font-bold text-white">
+                Volt<span class="text-cyan-400">PC</span>
+            </span>
+        </a>
+        <button type="button"
+                id="category-drawer-close"
+                aria-label="Close categories"
+                class="p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    {# -------- Drawer body -------- #}
+    <nav class="px-3 py-4 space-y-1">
+
+        <a href="{% url 'myapp:index' %}"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                  text-slate-200 hover:bg-slate-700 hover:text-cyan-400 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Home
+        </a>
+
+        <div class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Shop by category
+        </div>
+
+        {% for item in menu_categories %}
+            <div class="drawer-cat-group">
+
+                {% if item.children %}
+                <button type="button"
+                        class="drawer-cat-toggle w-full flex items-center justify-between gap-3
+                               px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200
+                               hover:bg-slate-700 hover:text-cyan-400 transition-colors"
+                        data-target="drawer-cat-{{ forloop.counter }}"
+                        aria-expanded="false"
+                        aria-controls="drawer-cat-{{ forloop.counter }}">
+                    <span class="truncate">{{ item.category.name }}</span>
+                    <svg class="drawer-cat-chevron w-4 h-4 flex-shrink-0 opacity-70
+                                transition-transform duration-200"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div id="drawer-cat-{{ forloop.counter }}"
+                     class="hidden pl-3 mt-1 space-y-0.5">
+                    <a href="{{ item.category.get_absolute_url }}"
+                       class="block px-3 py-2 rounded-md text-sm font-semibold
+                              text-cyan-400 hover:bg-slate-700/60 transition-colors">
+                        Shop all {{ item.category.name }}
+                    </a>
+                    {% for child in item.children %}
+                        <a href="{{ child.get_absolute_url }}"
+                           class="block px-3 py-2 rounded-md text-sm text-slate-300
+                                  hover:bg-slate-700/60 hover:text-cyan-400 transition-colors">
+                            {{ child.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                {% else %}
+                <a href="{{ item.category.get_absolute_url }}"
+                   class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg
+                          text-sm font-medium text-slate-200
+                          hover:bg-slate-700 hover:text-cyan-400 transition-colors">
+                    <span class="truncate">{{ item.category.name }}</span>
+                    <svg class="w-4 h-4 flex-shrink-0 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+
+    </nav>
+</aside>
+
+{% endif %}
