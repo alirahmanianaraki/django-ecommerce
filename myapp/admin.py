@@ -1,10 +1,9 @@
 from django.contrib import admin
 from django import forms
 from .models import (
-    Product, 
-    ProductImage, 
-    Tag,
-    Category)
+    Product, ProductImage, Tag, Category, 
+    Feature, FeatureValue, ProductFeature
+    )
 # Register your models here.
 
 class CategoryAdminForm(forms.ModelForm):
@@ -21,6 +20,15 @@ class CategoryAdminForm(forms.ModelForm):
 admin.site.register(ProductImage)
 admin.site.register(Tag)
 
+class ProductFeatureInline(admin.TabularInline):
+    model = ProductFeature
+    extra = 1
+    autocomplete_fields = ['feature', 'value']
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 3
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['title', 'price', 'stock', 'is_available']
@@ -28,6 +36,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ['title']
     prepopulated_fields = {'slug': ('title', )}
     filter_horizontal = ['category', 'tag']
+    inlines = [ProductImageInline, ProductFeatureInline]
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -42,3 +51,30 @@ class CategoryAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'parent__parent__parent__parent'
             )
+
+@admin.register(Feature)
+class FeatureAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'unit', 
+                    'is_filterable', 'is_visible_on_product_page', 
+                    'display_order']
+    list_editable = ['is_filterable', 'is_visible_on_product_page',
+                     'display_order']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
+
+@admin.register(FeatureValue)
+class FeatureValueAdmin(admin.ModelAdmin):
+    list_display = ['value', 'feature', 'slug', 'display_order']
+    list_filter = ['feature']
+    list_editable = ['display_order']
+    search_fields = ['value', 'slug']
+    prepopulated_fields = {'slug': ('value',)}
+    autocomplete_fields = ['feature']
+
+@admin.register(ProductFeature)
+class ProductFeatureAdmin(admin.ModelAdmin):
+    list_display = ['product', 'feature', 'value']
+    list_filter = ['feature']
+    autocomplete_fields = ['product', 'feature', 'value']
+    search_fields = ['product__title', 'feature__name', 'value__value']
+

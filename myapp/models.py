@@ -6,6 +6,88 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 # Create your models here.
+class Feature(models.Model):
+    """Product specification (Brand, color, ...)"""
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(unique=True, blank=True)
+    unit = models.CharField(max_length=20, blank=True)
+    is_filterable = models.BooleanField(default=True)
+    is_visible_on_product_page = models.BooleanField(default=True)
+    display_order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while Feature.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+class FeatureValue(models.Model):
+    """A permitted value for a Feature"""
+    feature = models.ForeignKey(
+        Feature,
+        on_delete=models.CASCADE,
+        related_name='values'
+    )
+    value = models.CharField(max_length=200)
+    slug = models.SlugField(blank=True)
+    display_order = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.feature.name}: {self.value}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.value)
+            slug = base_slug
+            counter = 1
+            while(
+                FeatureValue.objects
+                .filter(product_feature=self.feature, slug=slug)
+                .exclude(pk=self.pk)
+                .exists()
+            ):
+                slug = f'{base_slug}-{counter}'
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+class ProductFeature(models.Model):
+    """The link between the products, features, and values"""
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='features'
+    )
+    feature = models.ForeignKey(
+        Feature,
+        on_delete=models.PROTECT,
+        related_name='product_features'
+    )
+    value = models.ForeignKey(
+        FeatureValue,
+        on_delete=models.PROTECT,
+        related_name='product_features'
+    )
+
+    class Meta:
+        unique_together = [('product', 'feature', 'value')]
+        ordering = ['feature__display_order', 'value__display_order']
+
+    def __str__(self):
+        return f"{self.product.title} - {self.feature.name}: {self.value.value}"
+
 class Category(models.Model):
     """Hierarchical product categories with optional parent"""
     name = models.CharField(max_length=100)
