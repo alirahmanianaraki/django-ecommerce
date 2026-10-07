@@ -17,8 +17,8 @@
             <div class="bg-gray-100 rounded-lg overflow-hidden mb-4">
                 {% with first_image=product.product_images.first %}
                     {% if first_image %}
-                        <img src="{{ first_image.image.url }}" 
-                             alt="{{ product.title }}" 
+                        <img src="{{ first_image.image.url }}"
+                             alt="{{ product.title }}"
                              class="w-full h-96 object-cover">
                     {% else %}
                         <div class="w-full h-96 flex items-center justify-center text-gray-400 bg-gray-100">
@@ -29,14 +29,14 @@
                     {% endif %}
                 {% endwith %}
             </div>
-            
+
             <!-- Thumbnail Gallery -->
             {% if product.product_images.count > 1 %}
             <div class="grid grid-cols-4 gap-2">
                 {% for image in product.product_images.all %}
                     <div class="bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-75 transition-opacity">
-                        <img src="{{ image.image.url }}" 
-                             alt="{{ product.title }}" 
+                        <img src="{{ image.image.url }}"
+                             alt="{{ product.title }}"
                              class="w-full h-20 object-cover">
                     </div>
                 {% endfor %}
@@ -47,24 +47,26 @@
         <!-- Product Details -->
         <div class="lg:pl-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.title }}</h1>
+
             <!-- Categories Section -->
-{% if product.category.all %}
-<div class="flex flex-wrap items-center gap-2 mb-3">
-    <span class="text-sm text-gray-500 mr-1">Categories:</span>
-    {% for category in product.category.all %}
-        <a href="{{ category.get_absolute_url }}"
-           class="inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full
-                  bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800
-                  transition-colors">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-            </svg>
-            {{ category.name }}
-        </a>
-    {% endfor %}
-</div>
-{% endif %}
+            {% if product.category.all %}
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+                <span class="text-sm text-gray-500 mr-1">Categories:</span>
+                {% for category in product.category.all %}
+                    <a href="{{ category.get_absolute_url }}"
+                       class="inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full
+                              bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800
+                              transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                        </svg>
+                        {{ category.name }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <!-- Tags Section -->
             {% if product.tag.all %}
             <div class="flex flex-wrap items-center gap-2 mb-4">
@@ -83,7 +85,7 @@
                 {% endfor %}
             </div>
             {% endif %}
-            
+
             <!-- Price and Stock -->
             <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
                 <span class="text-3xl font-bold text-blue-600">${{ product.price }}</span>
@@ -102,9 +104,9 @@
                 <p class="text-gray-600 leading-relaxed">{{ product.description }}</p>
             </div>
 
-            <!-- Product Details Table -->
+            <!-- Quick Facts (core, always shown) -->
             <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Product Details</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Overview</h3>
                 <div class="space-y-2">
                     <div class="flex justify-between py-1 border-b border-gray-200">
                         <span class="text-gray-600">Product ID</span>
@@ -146,7 +148,7 @@
                     Add to Cart
                 </button>
 
-                <!-- ✅ Add to Wishlist (Heart) -->
+                <!-- Add to Wishlist (Heart) -->
                 <button type="button"
                         id="add-to-wishlist"
                         data-product-id="{{ product.id }}"
@@ -161,6 +163,33 @@
                     </svg>
                 </button>
             </div>
+
+            <!-- Specifications (dynamic from ProductFeature) -->
+            {% regroup product.features.all by feature as specs %}
+
+            {% with visible_specs=specs|dictsort:"grouper.display_order" %}
+                {% if visible_specs %}
+                <div class="mt-8 bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Specifications</h3>
+                    <div class="space-y-2">
+                        {% for group in visible_specs %}
+                            {% if group.grouper.is_visible_on_product_page %}
+                                <div class="flex justify-between py-1 border-b border-gray-200 last:border-0">
+                                    <span class="text-gray-600">{{ group.grouper.name }}</span>
+                                    <span class="font-medium text-right">
+                                        {% for pf in group.list %}
+                                            {% if not forloop.first %}<span class="text-slate-400">, </span>{% endif %}
+                                            {{ pf.value.value }}{% if group.grouper.unit %} {{ group.grouper.unit }}{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endwith %}
+
         </div>
     </div>
 </div>

@@ -44,6 +44,10 @@ class FeatureValue(models.Model):
     slug = models.SlugField(blank=True)
     display_order = models.PositiveSmallIntegerField(default=0)
 
+    class Meta:
+        ordering = ['feature__display_order', 'display_order', 'value']
+        unique_together = [('feature', 'value')]
+
     def __str__(self):
         return f"{self.feature.name}: {self.value}"
 
@@ -54,7 +58,7 @@ class FeatureValue(models.Model):
             counter = 1
             while(
                 FeatureValue.objects
-                .filter(product_feature=self.feature, slug=slug)
+                .filter(feature=self.feature, slug=slug)
                 .exclude(pk=self.pk)
                 .exists()
             ):

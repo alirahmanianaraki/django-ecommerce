@@ -28,7 +28,12 @@ def index(request):
 
 def detail(request, slug):
     product = get_object_or_404(
-        Product.objects.prefetch_related('category', 'tag', 'product_images'),
+        Product.objects.prefetch_related(
+            'category', 
+            'tag', 
+            'product_images',
+            'features__feature',
+            'features__value'),
         slug=slug
         )
     return render(request, 'myapp/detail.html',
