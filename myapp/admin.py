@@ -54,21 +54,21 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Feature)
 class FeatureAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'unit', 
+    list_display = ['name', 'slug', 'base_unit', 
                     'is_filterable', 'is_visible_on_product_page', 
                     'display_order']
-    list_editable = ['is_filterable', 'is_visible_on_product_page',
+    list_editable = ['base_unit', 'is_filterable', 'is_visible_on_product_page',
                      'display_order']
     search_fields = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
 
 @admin.register(FeatureValue)
 class FeatureValueAdmin(admin.ModelAdmin):
-    list_display = ['value', 'feature', 'slug', 'display_order']
+    list_display = ['feature', 'unit', 'value', 'numeric_value', 'slug', 'display_order']
     list_filter = ['feature']
-    list_editable = ['display_order']
+    list_editable = ['unit', 'numeric_value', 'display_order']
     search_fields = ['value', 'slug']
-    prepopulated_fields = {'slug': ('value',)}
+    #prepopulated_fields = {'slug': ('feature', 'value', 'unit')}
     autocomplete_fields = ['feature']
 
 @admin.register(ProductFeature)

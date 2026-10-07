@@ -31,14 +31,14 @@ def detail(request, slug):
         Product.objects.prefetch_related(
             'category', 
             'tag', 
-            'product_images',
-            'features__feature',
-            'features__value'),
+            'product_images')
+            .with_specs(),
         slug=slug
         )
     return render(request, 'myapp/detail.html',
                   {
-                      'product': product
+                      'product': product,
+                      'has_visible_specs': product.has_visible_specs,
                   })
 
 def tag(request, slug):

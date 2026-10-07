@@ -10,7 +10,10 @@ class Feature(models.Model):
     """Product specification (Brand, color, ...)"""
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(unique=True, blank=True)
-    unit = models.CharField(max_length=20, blank=True)
+    base_unit = models.CharField(
+        max_length=25, 
+        blank=True,
+        help_text="Canonical unit for numeric_value")
     is_filterable = models.BooleanField(default=True)
     is_visible_on_product_page = models.BooleanField(default=True)
     display_order = models.PositiveSmallIntegerField(default=0)
@@ -41,19 +44,39 @@ class FeatureValue(models.Model):
         related_name='values'
     )
     value = models.CharField(max_length=200)
+    unit = models.CharField(
+        max_length=25,
+        blank=True,
+        help_text="Display unit e.g. TB, GB, MB, or leave blank for not-measured"
+    )
+    numeric_value = models.DecimalField(
+        max_digits=25,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Optional; the value expressed in the feature\'s base unit"
+    )
     slug = models.SlugField(blank=True)
     display_order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ['feature__display_order', 'display_order', 'value']
-        unique_together = [('feature', 'value')]
+        unique_together = [('feature', 'value', 'unit')]
 
     def __str__(self):
+        if self.unit:
+            return f"{self.feature.name}: {self.value} {self.unit}"
         return f"{self.feature.name}: {self.value}"
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.value)
+            feature_name = self.feature.name
+            slug_parameter = f"{feature_name}-{self.value}"
+            if self.unit:
+                slug_parameter = f"{slug_parameter}-{self.unit}"
+                base_slug = slugify(slug_parameter)
+            else:
+                base_slug = slugify(slug_parameter)
             slug = base_slug
             counter = 1
             while(
@@ -217,6 +240,21 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+class ProductQuerySet(models.QuerySet):
+    """Custom queryset for Product"""
+    def with_specs(self):
+        """
+        Prefetch everything the detail page needs
+        to render specifications
+        """
+        return self.prefetch_related(
+            'features__feature',
+            'features__value'
+        )
+
+class ProductManager(models.Manager.from_queryset(ProductQuerySet)):
+    """Manager exposing ProductQueryset's helpers on Product.objects"""
+
 class Product(models.Model):
     title = models.CharField(max_length=150)
     description = models.TextField()
@@ -242,6 +280,8 @@ class Product(models.Model):
         related_name='products',
     )
     search_vector = SearchVectorField(null=True, blank=True)
+
+    objects = ProductManager()
 
     class Meta:
         indexes = [
@@ -280,6 +320,12 @@ class Product(models.Model):
 
     def __str__(self):
         return f'{self.title}--id: {self.pk}'
+
+    @property
+    def has_visible_specs(self):
+        return self.features.filter(
+            feature__is_visible_on_product_page=True
+        ).exists()
 
 class ProductImage(models.Model):
     image = models.ImageField(
