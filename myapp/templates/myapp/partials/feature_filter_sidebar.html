@@ -1,0 +1,39 @@
+{# myapp/templates/myapp/partials/feature_filter_sidebar.html #}
+
+{% if filter_groups %}
+<div class="space-y-5">
+
+    {% for group in filter_groups %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-700 mb-2">
+            {{ group.feature.name }}
+        </h3>
+
+        <ul class="space-y-1">
+            {% for value in group.values %}
+            <li>
+                <label class="flex items-center gap-2 px-3 py-1.5 rounded text-sm cursor-pointer
+                              transition-colors
+                              {% if value.slug in group.selected_slugs %}
+                                  bg-blue-50 text-blue-700 font-semibold
+                              {% else %}
+                                  text-slate-600 hover:bg-slate-50 hover:text-blue-600
+                              {% endif %}">
+                    <input type="checkbox"
+                           name="{{ group.feature.slug }}"
+                           value="{{ value.slug }}"
+                           {% if value.slug in group.selected_slugs %}checked{% endif %}
+                           class="w-4 h-4 rounded border-gray-300 text-blue-600
+                                  focus:ring-blue-500">
+                    <span class="truncate">
+                        {{ value.value }}{% if value.unit %} {{ value.unit }}{% endif %}
+                    </span>
+                </label>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+
+</div>
+{% endif %}
