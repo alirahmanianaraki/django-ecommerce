@@ -211,7 +211,6 @@ class Category(models.Model):
             ancestor = ancestor.parent
         return list(reversed(ancestors))
 
-
 class Tag(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(

@@ -9,9 +9,7 @@ import re
 from django.db.models import F, Q
 from .filters import apply_product_filters
 from .pagination import paginate
-from .feature_filters import (parse_feature_filters,
-                            build_filter_groups,
-                            apply_feature_filters,)
+from .feature_filters import build_sidebar_context
 from .models import (ProductImage, 
                      Product, 
                      Tag, 
@@ -22,23 +20,14 @@ from .models import (ProductImage,
 def index(request):
     base_queryset = Product.objects.all().prefetch_related('product_images')
     products_qs, filter_context = apply_product_filters(request, base_queryset)
-    known_feature_slugs = set(
-        Feature.objects
-        .filter(is_filterable=True)
-        .values_list('slug', flat=True)
-    )
-    selections = parse_feature_filters(request, known_feature_slugs)
-    products_qs = apply_feature_filters(products_qs, selections)
+    products_qs, sidebar_context = build_sidebar_context(request, products_qs)
     page_obj, pagination_context= paginate(request, products_qs)
-
-    filter_groups = build_filter_groups(selections)
     
     context = {
         'page_obj': page_obj,
-        'selection': selections,
-        'filter_groups': filter_groups,
         **filter_context,
-        **pagination_context
+        **pagination_context,
+        **sidebar_context
     }
     return render(request, 'myapp/index.html', context)
 
@@ -109,25 +98,16 @@ def search(request):
         default_sort='relevance', 
         allow_relevance=True
         )
-    known_feature_slugs = set(
-        Feature.objects
-        .filter(is_filterable=True)
-        .values_list('slug', flat=True)
-    )
-    selections = parse_feature_filters(request, known_feature_slugs)
-    results_qs = apply_feature_filters(request, known_feature_slugs)
+    results_qs, sidebar_context = build_sidebar_context(request, results_qs)
     page_obj, pagination_context = paginate(request, results_qs)
-
-    filter_groups = build_filter_groups(selections)
 
     return render(request, 'myapp/search.html',
                   {
                       'query': query,
                       'page_obj': page_obj,
                       'error': error,
-                      'selections': selections,
-                      'filter_groups': filter_groups,
                       **filter_context,
+                      **sidebar_context,
                       **pagination_context
                   })
 
@@ -140,27 +120,18 @@ def category(request, slug):
         .prefetch_related('product_images')
         .distinct()
     )
-    product_qs, filter_context = apply_product_filters(request, base_queryet)
-    known_feature_slugs = set(
-        Feature.objects
-        .filter(is_filterable=True)
-        .values_list('slug', flat=True)
-    )
-    selections = parse_feature_filters(request, known_feature_slugs)
-    product_qs = apply_feature_filters(product_qs, selections)
-    page_obj, pagination_context = paginate(request, product_qs)
+    products_qs, filter_context = apply_product_filters(request, base_queryet)
+    products_qs, sidebar_context = build_sidebar_context(request, products_qs)
+    page_obj, pagination_context = paginate(request, products_qs)
     subcategories = category_obj.children.all()
-
-    filter_groups = build_filter_groups(selections)
 
     return render(request, 'myapp/category.html',
                   {
                       'category': category_obj,
                       'subcategories': subcategories,
                       'page_obj': page_obj,
-                      'selections': selections,
-                      'filter_groups': filter_groups,
                       **filter_context,
+                      **sidebar_context,
                       **pagination_context,
                       'active_category': category_obj
                   })

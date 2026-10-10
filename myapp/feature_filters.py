@@ -71,3 +71,21 @@ def apply_feature_filters(queryset, selections):
             features__value__slug__in=value_slugs,
         )
     return queryset.distinct()
+
+def build_sidebar_context(request, queryset):
+    """Run the full feature-filter pipeline for a request"""
+    known_feature_slugs = set(
+        Feature.objects
+        .filter(is_filterable=True)
+        .values_list('slug', flat=True)
+    )
+    selections = parse_feature_filters(request, known_feature_slugs)
+    queryset = apply_feature_filters(queryset, selections)
+    filter_groups = build_filter_groups(selections)
+
+    sidebar_context = {
+        'selections': selections,
+        'filter_groups': filter_groups
+    }
+
+    return queryset, sidebar_context
