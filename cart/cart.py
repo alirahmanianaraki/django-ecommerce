@@ -61,3 +61,10 @@ class Cart():
             del self.cart[product_id]
             self.session.modified = True
 
+    def clear(self):
+        """Empty the cart and mark the session as modified"""
+        self.session['cart'] = {}
+        self.cart = self.session['cart']
+        self.session.modified = True
+        
+

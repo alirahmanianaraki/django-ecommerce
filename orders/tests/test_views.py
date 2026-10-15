@@ -82,3 +82,24 @@ class OrderViewTests(TestCase):
         item = OrderItem.objects.get(order=order)
         self.assertEqual(item.product, self.product)
         self.assertEqual(item.quantity, 2)
+
+    def test_place_order_decrements_stock(self):
+        self.add_cart_item("3")
+        response = self.client.post(reverse("orders:place_order"))
+
+        self.assertEqual(response.status_code, 200)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 7)
+
+    def test_place_order_rejects_insufficient_stock(self):
+        # Ask for more than the product has.
+        self.add_cart_item("999")
+        response = self.client.post(reverse("orders:place_order"))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["success"], False)
+        self.assertIn("Only", response.json()["error"])
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 10)   # unchanged
+        self.assertEqual(Order.objects.count(), 0)
+    

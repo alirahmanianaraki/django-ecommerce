@@ -2,9 +2,11 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import Order, OrderItem
 from users.models import Address
 from cart.cart import Cart
+from .models import Order, OrderItem
+from .services import place_order, InsufficientStock
+
 
 # Create your views here.
 def checkout(request):
@@ -23,38 +25,32 @@ def checkout(request):
         return redirect('users:register')
 
 @require_POST
-def place_order(request):
-    order_success = False
-    current_user = request.user
+def place_order_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'error': 'Please register first or login',
+            'redirect': 'register',
+        }, status=401)
+
     cart = Cart(request)
     if len(cart) == 0:
-        return JsonResponse(
-            {'success': False,
-             'error': 'Your cart is empty',
-             'redirect': 'index'},
-             status = 400
-        )
+        return JsonResponse({
+            'success': False,
+            'error': 'Your cart is empty',
+            'redirect': 'index',
+        }, status=400)
 
-    if request.method == 'POST':
-        if request.user.is_authenticated:
-            order = Order.objects.create(user=current_user, total_amount=cart.get_total_price())
-            for item in cart:
-                OrderItem.objects.create(
-                    order=order,
-                    product=item['product'],
-                    quantity=item['qty']
-                )
-            order_success = True
-            return JsonResponse({'success': order_success})
+    try:
+        place_order(user=request.user, cart=cart)
+    except InsufficientStock as exc:
+        return JsonResponse({
+            'success': False,
+            'error': str(exc),
+            'redirect': 'cart',
+        }, status=400)
 
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': 'Please register first or login',
-                'redirect': 'register',
-            },
-            status=401
-            )
+    return JsonResponse({'success': True})
 
 def order_success(request):
     return render(request, 'orders/order_success.html')

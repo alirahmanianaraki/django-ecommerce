@@ -59,6 +59,7 @@ class FeatureAdmin(admin.ModelAdmin):
                     'display_order']
     list_editable = ['base_unit', 'is_filterable', 'is_visible_on_product_page',
                      'display_order']
+    list_filter = ['is_filterable', 'is_visible_on_product_page']
     search_fields = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
 
