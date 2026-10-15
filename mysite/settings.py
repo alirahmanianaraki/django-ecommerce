@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -165,6 +166,12 @@ MAILERS = {
         }
     },
 }
+
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_MAIL'," \
+"VoltPC <noreply@voltpc.example>")
+
+# if DEBUG and 'test' not in sys.argv:
+#     MAILERS['default']['BACKEND'] = 'django.core.mail.backends.console.EmailBackend'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'

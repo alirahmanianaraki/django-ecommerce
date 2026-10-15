@@ -1,0 +1,130 @@
+{% autoescape on %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Order confirmation — #{{ order.pk }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.06);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#0ea5e9 0%,#3b82f6 100%);padding:32px 32px 28px 32px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td style="color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">
+                                        Volt<span style="color:#a5f3fc;">PC</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="color:#e0f2fe;font-size:14px;padding-top:6px;">
+                                        Your order has been received
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Greeting -->
+                    <tr>
+                        <td style="padding:32px 32px 8px 32px;">
+                            <p style="margin:0 0 12px 0;font-size:16px;line-height:1.5;">
+                                Hi {{ order.user.get_full_name|default:order.user.username }},
+                            </p>
+                            <p style="margin:0 0 12px 0;font-size:15px;line-height:1.6;color:#475569;">
+                                Thanks for your order! We've received it and we're getting it ready
+                                to ship. You'll receive a follow-up email when it's on its way.
+                            </p>
+                            <p style="margin:16px 0 0 0;font-size:15px;line-height:1.6;color:#475569;">
+                                Your order number is
+                                <strong style="color:#0f172a;">#{{ order.pk }}</strong>.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Items -->
+                    <tr>
+                        <td style="padding:24px 32px 8px 32px;">
+                            <h2 style="margin:0 0 12px 0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;">
+                                Items in this order
+                            </h2>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                                {% for item in items %}
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;">
+                                        {{ item.product.title }}
+                                        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">
+                                            Qty {{ item.quantity }} × ${{ item.unit_price }}
+                                        </div>
+                                    </td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;text-align:right;white-space:nowrap;">
+                                        ${{ item.total_price }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td style="padding:16px 0 0 0;font-size:14px;font-weight:700;color:#0f172a;">
+                                        Total
+                                    </td>
+                                    <td style="padding:16px 0 0 0;font-size:18px;font-weight:800;color:#0284c7;text-align:right;white-space:nowrap;">
+                                        ${{ order.total_amount }}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Shipping address -->
+                    <tr>
+                        <td style="padding:24px 32px 8px 32px;">
+                            <h2 style="margin:0 0 12px 0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;">
+                                Shipped to
+                            </h2>
+                            <div style="font-size:14px;line-height:1.6;color:#334155;">
+                                <div style="font-weight:600;color:#0f172a;">
+                                    {{ order.shipping_full_name }}
+                                </div>
+                                {% if order.shipping_title %}
+                                <div style="font-size:12px;color:#94a3b8;">
+                                    {{ order.shipping_title }}
+                                </div>
+                                {% endif %}
+                                <div>{{ order.shipping_description }}</div>
+                                <div>{{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_postal_code }}</div>
+                                <div>{{ order.shipping_country }}</div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- CTA -->
+                    <tr>
+                        <td style="padding:24px 32px 32px 32px;" align="center">
+                            <a href="{{ order_url }}"
+                               style="display:inline-block;padding:12px 24px;background:#0284c7;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
+                                View your order
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:20px 32px 28px 32px;border-top:1px solid #e2e8f0;font-size:12px;line-height:1.6;color:#94a3b8;">
+                            <p style="margin:0 0 6px 0;">
+                                If you have any questions, just reply to this email — we're happy to help.
+                            </p>
+                            <p style="margin:0;color:#cbd5e1;">
+                                — The {{ site_name }} team
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+{% endautoescape %}

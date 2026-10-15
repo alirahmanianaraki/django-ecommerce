@@ -1,0 +1,30 @@
+{% autoescape off %}Order confirmation — #{{ order.pk }}
+{{ site_name }}
+========================================
+
+Hi {{ order.user.get_full_name|default:order.user.username }},
+
+Thanks for your order! We've received it and are getting it ready.
+Your order number is #{{ order.pk }}.
+
+Items
+----------------------------------------
+{% for item in items %}- {{ item.product.title }} × {{ item.quantity }}  (${{ item.unit_price }} each)  =  ${{ item.total_price }}
+{% endfor %}
+Total: ${{ order.total_amount }}
+
+Shipped to
+----------------------------------------
+{{ order.shipping_full_name }}
+{% if order.shipping_title %}{{ order.shipping_title }}
+{% endif %}{{ order.shipping_description }}
+{{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_postal_code }}
+{{ order.shipping_country }}
+
+View your order:
+{{ order_url }}
+
+If you have any questions, just reply to this email.
+
+— The {{ site_name }} team
+{% endautoescape %}

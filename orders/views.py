@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from users.models import Address
+import logging
 from django.contrib.auth.decorators import login_required
 from cart.cart import Cart
 from .models import Order, OrderItem
@@ -11,7 +12,9 @@ from .services import (
     InsufficientStock,
     MissingShippingAddress,
 )
+from .emails import send_order_confirmation
 
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 def checkout(request):
@@ -49,7 +52,7 @@ def place_order_view(request):
     address = Address.objects.filter(user=request.user).first()
 
     try:
-        place_order(user=request.user, cart=cart, address=address)
+        order = place_order(user=request.user, cart=cart, address=address)
     except MissingShippingAddress:
         return JsonResponse({
             'success': False,
@@ -63,6 +66,11 @@ def place_order_view(request):
             'redirect': 'cart',
         }, status=400)
 
+    try:
+        send_order_confirmation(order, request=request)
+    except Exception as exc:
+        logger.exception('Order confirmation email failed for order #%s', order.pk)
+        
     return JsonResponse({'success': True})
 
 def order_success(request):
