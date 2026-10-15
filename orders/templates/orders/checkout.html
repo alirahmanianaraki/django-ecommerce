@@ -222,9 +222,11 @@
                     window.location.replace("{% url 'users:register' %}");
                 } else if (data.redirect === 'index') {
                     window.location.replace("{% url 'myapp:index' %}");
+                } else if (data.redirect == 'address') {
+                    window.location.replace("{% url 'users:add_address' %}");
                 } else {
                     window.location.replace("{% url 'orders:order_failed' %}");
-                }
+                } 
             },
         });
     });
