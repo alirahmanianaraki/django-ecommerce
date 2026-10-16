@@ -1,0 +1,14 @@
+{# myapp/templates/myapp/partials/star_rating.html #}
+{# Usage: {% include 'myapp/partials/star_rating.html' with value=product.avg_rating %} #}
+
+{% with rounded=value|floatformat:0|add:0 %}
+<span class="inline-flex items-center gap-0.5 text-amber-500 text-base leading-none" aria-label="{{ value }} out of 5 stars">
+    {% for i in "12345" %}
+        {% if forloop.counter <= rounded %}
+            <span>★</span>
+        {% else %}
+            <span class="text-slate-300">★</span>
+        {% endif %}
+    {% endfor %}
+</span>
+{% endwith %}

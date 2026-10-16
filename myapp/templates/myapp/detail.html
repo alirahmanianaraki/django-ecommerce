@@ -11,10 +11,10 @@
     </a>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Product Images -->
-        <div>
+        <!-- ==================== LEFT COLUMN ==================== -->
+        <div class="space-y-6">
             <!-- Main Image -->
-            <div class="bg-gray-100 rounded-lg overflow-hidden mb-4">
+            <div class="bg-gray-100 rounded-lg overflow-hidden">
                 {% with first_image=product.product_images.first %}
                     {% if first_image %}
                         <img src="{{ first_image.image.url }}"
@@ -42,9 +42,206 @@
                 {% endfor %}
             </div>
             {% endif %}
+
+            <!-- Specifications (dynamic from ProductFeature) -->
+            {% if has_visible_specs %}
+                {% regroup product.features.all by feature as specs %}
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Specifications</h3>
+                    <div class="space-y-2">
+                        {% for group in specs %}
+                            {% if group.grouper.is_visible_on_product_page %}
+                                <div class="flex justify-between py-1 border-b border-gray-200 last:border-0">
+                                    <span class="text-gray-600">{{ group.grouper.name }}</span>
+                                    <span class="font-medium text-right">
+                                        {% for pf in group.list %}
+                                            {% if not forloop.first %}<span class="text-slate-400">, </span>{% endif %}
+                                            {{ pf.value.value }}{% if pf.value.unit %} {{ pf.value.unit }}{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- ================= REVIEWS ================= -->
+            <div id="reviews" class="bg-white rounded-lg border border-gray-200 p-5">
+
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        Customer Reviews
+                        {% if product.rating_count %}
+                            <span class="text-sm font-normal text-slate-500 ml-2">
+                                ({{ product.rating_count }})
+                            </span>
+                        {% endif %}
+                    </h3>
+                </div>
+
+                {% if product.rating_count > 0 %}
+                    <div class="space-y-4 mb-6">
+
+                        <!-- Aggregate block -->
+                        <div class="flex items-center gap-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-100 p-5">
+                            <div class="text-4xl font-bold text-slate-800">
+                                {{ product.avg_rating|floatformat:1 }}
+                            </div>
+                            <div>
+                                {% include 'myapp/partials/star_rating.html' with value=product.avg_rating %}
+                                <div class="text-xs text-slate-500 mt-1">
+                                    Based on {{ product.rating_count }} review{{ product.rating_count|pluralize }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Distribution bars -->
+                        <div class="space-y-2">
+                            {% for row in rating_distribution.rows %}
+                                <div class="flex items-center gap-3 text-sm">
+                                    <span class="w-10 text-slate-500">{{ row.star }} ★</span>
+                                    <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-amber-400 rounded-full"
+                                             style="width: {{ row.percent|floatformat:0 }}%;"></div>
+                                    </div>
+                                    <span class="w-10 text-right text-slate-500">{{ row.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Write review form / permission messages -->
+                {% if request.user.is_authenticated %}
+                    {% if can_review %}
+                        <div class="bg-white/80 backdrop-blur-sm border border-white/60 rounded-2xl shadow-sm p-6 mb-6">
+                            <h4 class="text-base font-semibold text-slate-800 mb-4">
+                                Write a review
+                            </h4>
+
+                            <form method="post"
+                                  action=""
+                                  class="space-y-4"
+                                  id="review-form">
+                                {% csrf_token %}
+
+                                <!-- Star picker (JS-driven; hidden input holds the value) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">
+                                        Your rating
+                                    </label>
+                                    <div id="star-picker"
+                                         class="inline-flex items-center gap-1 text-3xl text-slate-300 cursor-pointer select-none"
+                                         role="radiogroup"
+                                         aria-label="Choose a rating from 1 to 5 stars">
+                                        <span data-star="1" role="radio" aria-label="1 star">★</span>
+                                        <span data-star="2" role="radio" aria-label="2 stars">★</span>
+                                        <span data-star="3" role="radio" aria-label="3 stars">★</span>
+                                        <span data-star="4" role="radio" aria-label="4 stars">★</span>
+                                        <span data-star="5" role="radio" aria-label="5 stars">★</span>
+                                    </div>
+                                    {{ review_form.rating }}
+                                    {% if review_form.rating.errors %}
+                                        <p class="text-red-500 text-xs mt-1">{{ review_form.rating.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ review_form.title.id_for_label }}"
+                                           class="block text-sm font-medium text-slate-700 mb-1">
+                                        Title (optional)
+                                    </label>
+                                    {{ review_form.title }}
+                                    {% if review_form.title.errors %}
+                                        <p class="text-red-500 text-xs mt-1">{{ review_form.title.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ review_form.body.id_for_label }}"
+                                           class="block text-sm font-medium text-slate-700 mb-1">
+                                        Your review (optional)
+                                    </label>
+                                    {{ review_form.body }}
+                                    {% if review_form.body.errors %}
+                                        <p class="text-red-500 text-xs mt-1">{{ review_form.body.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <button type="submit"
+                                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
+                                               bg-blue-600 hover:bg-blue-700 text-white font-semibold
+                                               transition-colors">
+                                    Submit review
+                                </button>
+                            </form>
+                        </div>
+                    {% elif existing_review %}
+                        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-6 text-sm text-blue-800">
+                            You've already reviewed this product.
+                        </div>
+                    {% elif not has_purchased %}
+                        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-6 text-sm text-amber-800">
+                            Only verified buyers can review this product. Buy it first to leave a review.
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-6 text-sm text-slate-600">
+                        <a href="{% url 'users:login' %}?next={{ request.path }}"
+                           class="text-blue-600 font-medium hover:underline">
+                            Log in
+                        </a>
+                        to write a review (only verified buyers can review).
+                    </div>
+                {% endif %}
+
+                <!-- Review list -->
+                {% if product.rating_count > 0 %}
+                    <div class="space-y-4">
+                        {% for review in reviews %}
+                            <div class="bg-white/80 backdrop-blur-sm border border-white/60 rounded-2xl
+                                        shadow-sm p-5">
+                                <div class="flex items-start justify-between gap-4 mb-2">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-slate-800">
+                                                {{ review.user.get_full_name|default:review.user.username }}
+                                            </span>
+                                            <span class="inline-flex items-center gap-1 text-[10px] uppercase
+                                                         tracking-wider font-semibold text-emerald-700
+                                                         bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                                Verified buyer
+                                            </span>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mt-0.5">
+                                            {{ review.created_at|date:"M j, Y" }}
+                                        </div>
+                                    </div>
+                                    {% include 'myapp/partials/star_rating.html' with value=review.rating %}
+                                </div>
+
+                                {% if review.title %}
+                                    <h5 class="text-sm font-semibold text-slate-800 mt-3 mb-1">
+                                        {{ review.title }}
+                                    </h5>
+                                {% endif %}
+
+                                {% if review.body %}
+                                    <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+                                        {{ review.body }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            </div>
+            <!-- ================ /REVIEWS ================== -->
         </div>
 
-        <!-- Product Details -->
+        <!-- ==================== RIGHT COLUMN ==================== -->
         <div class="lg:pl-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.title }}</h1>
 
@@ -96,6 +293,23 @@
                         Out of Stock
                     {% endif %}
                 </span>
+            </div>
+
+            <!-- Rating summary -->
+            <div class="flex items-center gap-4 border-b border-gray-200 pb-4 mb-4">
+                {% include 'myapp/partials/star_rating.html' with value=product.avg_rating %}
+                <div class="text-sm">
+                    {% if product.rating_count > 0 %}
+                        <span class="font-semibold text-slate-800">{{ product.avg_rating|floatformat:1 }}</span>
+                        <span class="text-slate-500">out of 5</span>
+                        <span class="text-slate-400">·</span>
+                        <a href="#reviews" class="text-blue-600 hover:underline">
+                            {{ product.rating_count }} review{{ product.rating_count|pluralize }}
+                        </a>
+                    {% else %}
+                        <span class="text-slate-500">No reviews yet</span>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Description -->
@@ -163,30 +377,6 @@
                     </svg>
                 </button>
             </div>
-
-            <!-- Specifications (dynamic from ProductFeature) -->
-            {% if has_visible_specs %}
-                {% regroup product.features.all by feature as specs %}
-                <div class="mt-8 bg-gray-50 rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Specifications</h3>
-                    <div class="space-y-2">
-                        {% for group in specs %}
-                            {% if group.grouper.is_visible_on_product_page %}
-                                <div class="flex justify-between py-1 border-b border-gray-200 last:border-0">
-                                    <span class="text-gray-600">{{ group.grouper.name }}</span>
-                                    <span class="font-medium text-right">
-                                        {% for pf in group.list %}
-                                            {% if not forloop.first %}<span class="text-slate-400">, </span>{% endif %}
-                                            {{ pf.value.value }}{% if pf.value.unit %} {{ pf.value.unit }}{% endif %}
-                                        {% endfor %}
-                                    </span>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-
         </div>
     </div>
 </div>
@@ -225,6 +415,48 @@
                 alert('Only ' + maxStock + ' items available in stock.');
             }
         });
+    });
+</script>
+
+<!-- ========== Star Picker (for the review form) ========== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const picker = document.getElementById('star-picker');
+        if (!picker) return;
+
+        const stars = picker.querySelectorAll('span[data-star]');
+        const hidden = document.getElementById('id_rating');
+
+        function paint(value) {
+            stars.forEach(function (star) {
+                const n = parseInt(star.dataset.star, 10);
+                if (n <= value) {
+                    star.classList.remove('text-slate-300');
+                    star.classList.add('text-amber-500');
+                } else {
+                    star.classList.remove('text-amber-500');
+                    star.classList.add('text-slate-300');
+                }
+            });
+        }
+
+        stars.forEach(function (star) {
+            star.addEventListener('mouseenter', function () {
+                paint(parseInt(star.dataset.star, 10));
+            });
+            star.addEventListener('click', function () {
+                const value = parseInt(star.dataset.star, 10);
+                if (hidden) hidden.value = value;
+                paint(value);
+            });
+        });
+
+        picker.addEventListener('mouseleave', function () {
+            paint(parseInt(hidden && hidden.value, 10) || 0);
+        });
+
+        // Restore visual state on page load if the form was re-rendered with errors.
+        paint(parseInt(hidden && hidden.value, 10) || 0);
     });
 </script>
 

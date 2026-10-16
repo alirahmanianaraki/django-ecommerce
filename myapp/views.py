@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.postgres.search import (
     SearchQuery,
     SearchRank,
@@ -6,15 +6,19 @@ from django.contrib.postgres.search import (
     TrigramSimilarity
 )
 import re
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import F, Q
+from django.db.models import Avg, Count
 from .filters import apply_product_filters
 from .pagination import paginate
 from .feature_filters import build_sidebar_context
-from .models import (ProductImage, 
-                     Product, 
+from .forms import ReviewForm
+from .models import ( Product, 
                      Tag, 
                      Category,
-                     Feature)
+                     Review)
+from orders.models import OrderItem
 
 # Create your views here.
 def index(request):
@@ -36,15 +40,83 @@ def detail(request, slug):
         Product.objects.prefetch_related(
             'category', 
             'tag', 
-            'product_images')
+            'product_images',
+            'reviews__user')
             .with_specs(),
         slug=slug
         )
+    review_form = ReviewForm()
+    existing_review = None
+    can_review = False
+    has_purchased = False
+    if request.user.is_authenticated:
+        existing_review = Review.objects.filter(
+            product=product, user=request.user
+        ).first()
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user,
+            product=product,
+        ).exists()
+
+        # Eligible if they bought it and don't have a review yet
+        can_review = has_purchased and existing_review is None
+
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in to write a review')
+            return redirect('users:login')
+        if not has_purchased:
+            messages.error(request, 'Only verified buyers can review this product')
+            return redirect(product.get_absolute_url())
+        if existing_review is not None:
+            messages.error(request, 'You have already reviewed this product')
+            return redirect(product.get_absolute_url())
+
+        review_form = ReviewForm(request.POST)
+        if review_form.is_valid():
+            review = review_form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            messages.success(request, 'Thanks for your review')
+            return redirect(product.get_absolute_url())
+
+    # Aggregate + Distribution
+    reviews_qs = product.reviews.all()
+    distribution = _rating_distribution(product)
+
     return render(request, 'myapp/detail.html',
                   {
                       'product': product,
                       'has_visible_specs': product.has_visible_specs,
+                      'reviews': reviews_qs,
+                      'review_form': review_form,
+                      'existing_review': existing_review,
+                      'can_review': can_review,
+                      'has_purchased': has_purchased,
+                      'rating_distribution': distribution
                   })
+
+def _rating_distribution(product):
+    rows = (
+        product.reviews
+        .values('rating')
+        .annotate(count=Count('id'))
+        .order_by('-rating')
+    )
+    counts = {5:0 , 4:0, 3:0, 2:0, 1:0}
+    for row in rows:
+        counts[row['rating']] = row['count']
+    total = sum(counts.values())
+    percentages = {
+        star: (counts[star] * 100.0/ total) if total else 0.0 
+        for star in counts
+    }
+    return {
+        'counts': counts,
+        'percentages': percentages,
+        'total': total
+    }
 
 def tag(request, slug):
     tag = get_object_or_404(Tag, slug=slug)

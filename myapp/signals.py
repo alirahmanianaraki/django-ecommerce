@@ -1,6 +1,7 @@
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.dispatch import receiver
-from .models import Product, Category
+from django.db.models import Avg, Count
+from .models import Product, Category, Review
 
 def get_uncategorized_category():
     """
@@ -67,3 +68,23 @@ def maintain_product_categories(
     # CASE 2: Product has zero categories.
     if not categories.exists():
         instance.category.add(uncategorized)
+
+def recompute_product_rating(product):
+    """
+    Recalculate avg_rating and rating_count for a single product
+    """
+    aggregate = product.reviews.aggregate(
+        avg=Avg('rating'),
+        count=Count('id'),
+    )
+    product.avg_rating = aggregate['avg'] or 0
+    product.rating_count = aggregate['count'] or 0
+    product.save(update_fields=['avg_rating', 'rating_count'])
+
+@receiver(post_save, sender=Review)
+def update_rating_on_save(sender, instance, **kwargs):
+    recompute_product_rating(instance.product)
+
+@receiver(post_delete, sender=Review)
+def update_rating_on_delete(sender, instance, **kwargs):
+    recompute_product_rating(instance.product)

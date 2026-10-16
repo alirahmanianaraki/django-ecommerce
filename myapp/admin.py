@@ -2,7 +2,8 @@ from django.contrib import admin
 from django import forms
 from .models import (
     Product, ProductImage, Tag, Category, 
-    Feature, FeatureValue, ProductFeature
+    Feature, FeatureValue, ProductFeature,
+    Review
     )
 # Register your models here.
 
@@ -79,3 +80,10 @@ class ProductFeatureAdmin(admin.ModelAdmin):
     autocomplete_fields = ['product', 'feature', 'value']
     search_fields = ['product__title', 'feature__name', 'value__value']
 
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['product', 'user', 'rating', 'title', 'created_at']
+    list_filter = ['rating', 'created_at']
+    search_fields = ['product__title', 'user__username', 'title', 'body']
+    autocomplete_fields = ['product', 'user']
+    readonly_fields = ['created_at', 'updated_at']

@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django.contrib.auth.models import User
+from django.db.models import Q
 
 # Create your models here.
 class Feature(models.Model):
@@ -239,6 +241,36 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+class Review(models.Model):
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    user = models.ForeignKey(
+        'auth.User',
+        on_delete=models.CASCADE,
+        related_name='product_reviews'
+    )
+    rating = models.PositiveSmallIntegerField()
+    title = models.CharField(max_length=120, blank=True)
+    body = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = [('product', 'user')]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(rating__gte=1) & Q(rating__lte=5),
+                name='review_rating_between_1_and_5',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.product.title} - {self.rating}★ by {self.user.username} "
+
 class ProductQuerySet(models.QuerySet):
     """Custom queryset for Product"""
     def with_specs(self):
@@ -279,6 +311,12 @@ class Product(models.Model):
         related_name='products',
     )
     search_vector = SearchVectorField(null=True, blank=True)
+    avg_rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0
+    )
+    rating_count = models.PositiveSmallIntegerField(default=0)
 
     objects = ProductManager()
 
