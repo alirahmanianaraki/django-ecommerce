@@ -8,6 +8,8 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from myapp.models import Review
+from myapp.pagination import paginate
 from .token import account_activation_token
 from .models import Address
 from .forms import (CreateUserForm, 
@@ -158,4 +160,24 @@ def add_address(request):
     return render(request, 'users/add_address.html',
                   {
                       'form': form,
+                  })
+
+@login_required(login_url='users:login')
+def my_reviews(request):
+    """
+    List the reviews written by the currently authenticated user.
+    """
+    reviews_qs = (
+        Review.objects
+        .filter(user=request.user)
+        .select_related('product')
+        .prefetch_related('product__product_images')
+        .order_by('-created_at')
+    )
+    page_obj, pagination_context = paginate(request, reviews_qs)
+
+    return render(request, 'users/my_reviews.html',
+                  {
+                      'page_obj': page_obj,
+                      **pagination_context,
                   })

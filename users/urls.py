@@ -12,6 +12,7 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('profile/modify/', views.modify_user_info, name='modify_user_info'),
     path('profile/modify/add-address', views.add_address, name='add_address'),
+    path('profile/reviews/', views.my_reviews, name='my_reviews'),
     # Email Verification
     path('email-verification/<str:uidb64>/<str:token>', views.email_verification, name='email_verification'),
     path('email-verification/sent', views.email_verification_sent, name='email_verification_sent'),
