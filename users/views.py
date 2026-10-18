@@ -8,14 +8,16 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from myapp.models import Review
+from myapp.forms import ReviewForm
 from myapp.pagination import paginate
 from .token import account_activation_token
 from .models import Address
 from .forms import (CreateUserForm, 
                     LoginForm, 
                     ProfileForm,
-                    AddressForm
+                    AddressForm,
                     )
 
 # Create your views here.
@@ -181,3 +183,43 @@ def my_reviews(request):
                       'page_obj': page_obj,
                       **pagination_context,
                   })
+
+@login_required(login_url='users:login')
+def edit_review(request, pk):
+    """
+    Edit the current user's review for a given product
+    """
+    review = get_object_or_404(
+        Review,
+        pk=pk,
+        user=request.user
+    )
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your review has been updated')
+            return redirect('users:my_reviews')
+    else:
+        form = ReviewForm(instance=review)
+
+    return render(request, 'users/edit_review.html',
+                  {
+                      'form': form,
+                      'review': review
+                  })
+
+@require_POST
+@login_required(login_url='users:login')
+def delete_review(request, pk):
+    """
+    Delete the current user's review
+    """
+    review = get_object_or_404(
+        Review,
+        pk=pk,
+        user=request.user
+    )
+    review.delete()
+    messages.success(request, 'Your review has been deleted')
+    return redirect('users:my_reviews')

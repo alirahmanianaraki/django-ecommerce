@@ -13,6 +13,8 @@ urlpatterns = [
     path('profile/modify/', views.modify_user_info, name='modify_user_info'),
     path('profile/modify/add-address', views.add_address, name='add_address'),
     path('profile/reviews/', views.my_reviews, name='my_reviews'),
+    path('profile/reviews/<int:pk>/edit/', views.edit_review, name='edit_review'),
+    path('profile/reviews/<int:pk>/delete/', views.delete_review, name='delete_review'),
     # Email Verification
     path('email-verification/<str:uidb64>/<str:token>', views.email_verification, name='email_verification'),
     path('email-verification/sent', views.email_verification_sent, name='email_verification_sent'),

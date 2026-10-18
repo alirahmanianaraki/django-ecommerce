@@ -1,0 +1,152 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Edit Review - VoltPC{% endblock %}
+
+{% block body %}
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
+
+        <!-- Header -->
+        <div class="mb-6">
+            <a href="{% url 'users:my_reviews' %}"
+               class="inline-flex items-center gap-2 text-sm font-medium text-slate-600
+                      hover:text-blue-600 transition-colors mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                     viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to My Reviews
+            </a>
+            <h1 class="text-2xl font-bold text-slate-800">Edit your review</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Reviewing
+                <a href="{{ review.product.get_absolute_url }}"
+                   class="text-blue-600 hover:underline font-medium">
+                    {{ review.product.title }}
+                </a>
+            </p>
+        </div>
+
+        <form method="POST"
+              action="{% url 'users:edit_review' review.pk %}"
+              class="space-y-5">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700
+                            px-3 py-2 rounded text-sm">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Star rating -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">
+                    Your rating
+                </label>
+                <div id="star-picker"
+                     class="inline-flex items-center gap-1 text-3xl text-slate-300
+                            cursor-pointer select-none"
+                     role="radiogroup"
+                     aria-label="Choose a rating from 1 to 5 stars">
+                    <span data-star="1" role="radio" aria-label="1 star">★</span>
+                    <span data-star="2" role="radio" aria-label="2 stars">★</span>
+                    <span data-star="3" role="radio" aria-label="3 stars">★</span>
+                    <span data-star="4" role="radio" aria-label="4 stars">★</span>
+                    <span data-star="5" role="radio" aria-label="5 stars">★</span>
+                </div>
+                {{ form.rating }}
+                {% if form.rating.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.rating.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Title -->
+            <div>
+                <label for="{{ form.title.id_for_label }}"
+                       class="block text-sm font-medium text-slate-700 mb-1">
+                    Title (optional)
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Body -->
+            <div>
+                <label for="{{ form.body.id_for_label }}"
+                       class="block text-sm font-medium text-slate-700 mb-1">
+                    Your review (optional)
+                </label>
+                {{ form.body }}
+                {% if form.body.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.body.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <a href="{% url 'users:my_reviews' %}"
+                   class="px-5 py-2.5 border border-slate-300 rounded
+                          text-slate-700 font-medium hover:bg-slate-50
+                          transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 rounded bg-blue-600 hover:bg-blue-700
+                               text-white font-semibold transition-colors">
+                    Save changes
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- Star picker JS -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const picker = document.getElementById('star-picker');
+        if (!picker) return;
+
+        const stars = picker.querySelectorAll('span[data-star]');
+        const hidden = document.getElementById('id_rating');
+
+        function paint(value) {
+            stars.forEach(function (star) {
+                const n = parseInt(star.dataset.star, 10);
+                if (n <= value) {
+                    star.classList.remove('text-slate-300');
+                    star.classList.add('text-amber-500');
+                } else {
+                    star.classList.remove('text-amber-500');
+                    star.classList.add('text-slate-300');
+                }
+            });
+        }
+
+        stars.forEach(function (star) {
+            star.addEventListener('mouseenter', function () {
+                paint(parseInt(star.dataset.star, 10));
+            });
+            star.addEventListener('click', function () {
+                const value = parseInt(star.dataset.star, 10);
+                if (hidden) hidden.value = value;
+                paint(value);
+            });
+        });
+
+        picker.addEventListener('mouseleave', function () {
+            paint(parseInt(hidden && hidden.value, 10) || 0);
+        });
+
+        // Restore visual state on page load — crucial for edit,
+        // where the form is pre-populated with the existing rating.
+        paint(parseInt(hidden && hidden.value, 10) || 0);
+    });
+</script>
+{% endblock %}
