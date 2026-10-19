@@ -241,6 +241,29 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+class StockAlert(models.Model):
+    """
+    A request to be notified when a product is back in stock
+    """
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='stock_alerts'
+    )
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['product', 'notified_at']),
+        ]
+
+    def __str__(self):
+        status = 'notified' if self.notified_at else 'waiting'
+        return f"{self.email} - {self.product.title} ({status})"
+
 class Review(models.Model):
     product = models.ForeignKey(
         'Product',

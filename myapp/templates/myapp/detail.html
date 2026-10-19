@@ -340,43 +340,83 @@
                     </div>
                 </div>
             </div>
+            <!-- ==================== Purchase / Notify ==================== -->
+            <div class="space-y-4">
+                <!-- PRIMARY ACTION: Changes based on stock -->
+                {% if product.stock > 0 %}
+                    <!-- Add to Cart Section (in stock) -->
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex items-center border border-gray-300 rounded-lg">
+                            <button class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors" id="decrease-qty">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                </svg>
+                            </button>
+                            <input type="number" id="quantity" value="1" min="1" max="{{ product.stock }}" class="w-16 text-center py-3 border-x border-gray-300 focus:outline-none">
+                            <button class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors" id="increase-qty">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </button>
+                        </div>
 
-            <!-- Add to Cart Section -->
-            <div class="flex flex-wrap gap-4">
-                <div class="flex items-center border border-gray-300 rounded-lg">
-                    <button class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors" id="decrease-qty">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                        </svg>
-                    </button>
-                    <input type="number" id="quantity" value="1" min="1" max="{{ product.stock }}" class="w-16 text-center py-3 border-x border-gray-300 focus:outline-none">
-                    <button class="px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors" id="increase-qty">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                    </button>
-                </div>
+                        <!-- Add to Cart -->
+                        <button id="atc" value="{{ product.id }}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-300">
+                            Add to Cart
+                        </button>
+                    </div>
 
-                <!-- Add to Cart -->
-                <button id="atc" value="{{ product.id }}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-300">
-                    Add to Cart
-                </button>
+                {% else %}
+                    <!-- Notify when available (out of stock) -->
+                    <div id="notify-block" class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                        <!-- Alert header -->
+                        <div class="flex items-start gap-3 mb-4">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-amber-900">Out of stock</p>
+                                <p class="text-sm text-amber-800 mt-0.5">Enter your email and we'll let you know the moment it's back.</p>
+                            </div>
+                        </div>
 
-                <!-- Add to Wishlist (Heart) -->
+                        <!-- Form -->
+                        <form id="notify-form" method="POST" action="{% url 'myapp:notify_when_available' product.slug %}" class="space-y-3">
+                            {% csrf_token %}
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="email" name="email" required autocomplete="email" placeholder="your@email.com" value="{{ request.user.email|default:'' }}"
+                                    class="flex-1 px-3 py-2.5 border border-amber-300 rounded-lg bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400">
+                                <button type="submit" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors whitespace-nowrap">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/>
+                                    </svg>
+                                    Notify me
+                                </button>
+                            </div>
+                            <p id="notify-feedback" class="text-xs text-transparent select-none" aria-live="polite">&nbsp;</p>
+                        </form>
+                    </div>
+                {% endif %}
+
+                <!-- SECONDARY ACTION: Always visible -->
                 <button type="button"
                         id="add-to-wishlist"
                         data-product-id="{{ product.id }}"
                         title="Add to wishlist"
-                        class="wishlist-btn inline-flex items-center justify-center w-[52px] rounded-lg
-                               bg-rose-50 text-rose-500 border border-rose-200
-                               hover:bg-rose-500 hover:text-white hover:border-rose-500
-                               transition-all duration-300">
-                    <svg class="wishlist-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        class="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg
+                            border border-rose-200 bg-rose-50 text-rose-500
+                            hover:bg-rose-500 hover:text-white hover:border-rose-500
+                            transition-all duration-300 font-medium">
+                    <svg class="wishlist-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                     </svg>
+                    <span>Add to Wishlist</span>
                 </button>
             </div>
+
         </div>
     </div>
 </div>
@@ -558,5 +598,66 @@
             }
         });
     });
+
+// ========== Notify when available (AJAX) ==========
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('notify-form');
+    if (!form) return;
+
+    const feedback = document.getElementById('notify-feedback');
+    const button = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const email = form.querySelector('input[name="email"]').value.trim();
+        if (!email) {
+            feedback.textContent = 'Please enter your email.';
+            feedback.classList.remove('text-transparent');
+            feedback.classList.add('text-red-600');
+            return;
+        }
+
+        button.disabled = true;
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': form.querySelector('input[name="csrfmiddlewaretoken"]').value,
+            },
+            body: new FormData(form),
+        })
+        .then(function (response) {
+            return response.json().then(function (data) {
+                return { status: response.status, data: data };
+            });
+        })
+        .then(function (result) {
+            const data = result.data;
+            feedback.classList.remove('text-transparent', 'text-red-600', 'text-emerald-700');
+
+            if (data.success) {
+                feedback.classList.add('text-emerald-700');
+                feedback.textContent = data.already_subscribed
+                    ? "You're already on the list for this product."
+                    : "You're on the list. We'll email you when it's back.";
+                form.querySelector('input[name="email"]').disabled = true;
+                button.disabled = true;
+                button.textContent = 'Subscribed';
+            } else {
+                feedback.classList.add('text-red-600');
+                feedback.textContent = data.error || 'Something went wrong. Please try again.';
+                button.disabled = false;
+            }
+        })
+        .catch(function () {
+            feedback.classList.remove('text-transparent', 'text-red-600', 'text-emerald-700');
+            feedback.classList.add('text-red-600');
+            feedback.textContent = 'Network error. Please try again.';
+            button.disabled = false;
+        });
+    });
+});
 </script>
 {% endblock %}

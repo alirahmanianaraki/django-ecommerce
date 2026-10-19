@@ -1,0 +1,14 @@
+{% autoescape off %}Hi there,
+
+Good news — {{ product.title }} is back in stock.
+
+View it here: {{ product_url }}
+
+Hurry, stock is limited.
+
+— The {{ site_name }} team
+
+---
+You're receiving this because you asked to be notified when this product
+came back in stock. No further emails will be sent for this restock.
+{% endautoescape %}

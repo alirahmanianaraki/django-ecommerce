@@ -1,6 +1,6 @@
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
-from .models import Review
+from .models import Review, StockAlert
 
 class ReviewForm(forms.ModelForm):
     rating = forms.IntegerField(
@@ -49,3 +49,27 @@ class ReviewForm(forms.ModelForm):
             self.add_error('title', 'Please provide a title if you provide a body.')
         
         return cleaned_data
+
+class StockAlerForm(forms.ModelForm):
+    class Meta:
+        model = StockAlert
+        fields = ['email']
+        widgets = {
+            'email': forms.EmailInput(attrs={
+                'placeholder': 'your@mail.com',
+                'autocomplete': 'email',
+                'required': True
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].widget.attrs.update({
+            'class': (
+                'w-full px-3 py-2 border border-gray-300 rounded '
+                'focus:outline-none focus:ring-2 focus:ring-blue-500'
+            ),
+        })
+
+    def clean_email(self):
+        return self.cleaned_data['email'].strip().lower()

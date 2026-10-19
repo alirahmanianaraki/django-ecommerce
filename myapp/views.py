@@ -1,4 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 from django.contrib.postgres.search import (
     SearchQuery,
     SearchRank,
@@ -13,11 +16,12 @@ from django.db.models import Avg, Count
 from .filters import apply_product_filters
 from .pagination import paginate
 from .feature_filters import build_sidebar_context
-from .forms import ReviewForm
+from .forms import ReviewForm, StockAlerForm
 from .models import ( Product, 
                      Tag, 
                      Category,
-                     Review)
+                     Review,
+                     StockAlert)
 from orders.models import OrderItem
 
 # Create your views here.
@@ -208,3 +212,58 @@ def category(request, slug):
                       'active_category': category_obj
                   })
 
+@require_POST
+def notify_when_available(request, slug):
+    """
+    Register a stock alert for a product
+    """
+    product = get_object_or_404(Product, slug=slug)
+    if product.stock > 0:
+        if _is_ajax(request):
+            return JsonResponse({
+                'success': False,
+                'error': 'This product is currenlty in stock',
+            }, status=400)
+        messages.error(request, 'This product is currently in stock')
+        return redirect(product.get_absolute_url())
+
+    form = StockAlerForm(request.POST)
+
+    if not form.is_valid():
+        if _is_ajax(request):
+            return JsonResponse({
+                'success': False,
+                'error': 'Please enter a valid email address',
+                'errors': form.errors,
+            }, status=400)
+        # Non-AJAX
+        messages.error(request, 'Please enter a valid email address')
+        return redirect(product.get_absolute_url())
+
+    email = form.cleaned_data['email']
+
+    # Deduplicate (product, email)
+    exisiting = StockAlert.objects.filter(
+        product=product,
+        email=email,
+        notified_at__isnull=True,
+    ).exists()
+
+    if not exisiting:
+        StockAlert.objects.create(product=product, email=email)
+    if _is_ajax(request):
+        return JsonResponse({
+            'success': True,
+            'message': 'Your are on the list. We will email you when it is back',
+            'already_subscribed': exisiting
+        })
+    messages.success(
+        request,
+        'Your are on the list. We will email you when it is back'
+    )
+    return redirect(product.get_absolute_url())
+
+def _is_ajax(request):
+    """Return True if the request was made via AJAX"""
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    

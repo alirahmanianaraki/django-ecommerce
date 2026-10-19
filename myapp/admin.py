@@ -1,9 +1,10 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils import timezone
 from django import forms
 from .models import (
     Product, ProductImage, Tag, Category, 
     Feature, FeatureValue, ProductFeature,
-    Review
+    Review, StockAlert
     )
 # Register your models here.
 
@@ -38,6 +39,63 @@ class ProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', )}
     filter_horizontal = ['category', 'tag']
     inlines = [ProductImageInline, ProductFeatureInline]
+    actions = ['notify_waiting_customers']
+
+    @admin.action(description='Notify waiting stock alerts for selected products')
+    def notify_waiting_customers(self, request, queryset):
+        from .emails import send_stock_alert_email
+
+        total_sent = 0
+        total_failed = 0
+
+        for product in queryset:
+            if product.stock <= 0:
+                self.message_user(
+                    request,
+                    f"{product.title} is still out of stock - Skipped",
+                    level=messages.WARNING
+                )
+                continue
+
+            alerts = list(
+                StockAlert.objects.filter(
+                    product=product, notified_at__isnull=True)
+            )
+            if not alerts:
+                self.message_user(
+                    request,
+                    f"{product.title}: no waiting alerts",
+                    level=messages.INFO
+                )
+                continue
+
+            for alert in alerts:
+                try:
+                    send_stock_alert_email(alert)
+                    alert.notified_at = timezone.now()
+                    alert.save(update_fields=['notified_at'])
+                    total_sent += 1
+                except Exception as exc:
+                    total_failed += 1
+                    self.message_user(
+                        request,
+                        f"Failed to email {alert.email}: {exc}",
+                        level=messages.ERROR
+                    )
+
+        if total_sent:
+            self.message_user(
+                request,
+                f"sent {total_sent} stock alert(s)",
+                level=messages.SUCCESS
+            )
+        if total_failed:
+            self.message_user(
+                request,
+                f"{total_failed} alert(s) failed to send",
+                level=messages.WARNING
+            )
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -87,3 +145,23 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ['product__title', 'user__username', 'title', 'body']
     autocomplete_fields = ['product', 'user']
     readonly_fields = ['created_at', 'updated_at']
+
+@admin.register(StockAlert)
+class StockAlertAdmin(admin.ModelAdmin):
+    list_display = ['product', 'email', 'created_at', 'notified_at']
+    list_filter = ['notified_at', 'created_at']
+    search_fields = ['email', 'product__title']
+    autocomplete_fields = ['product']
+    readonly_fields = ['created_at', 'notified_at']
+    actions = ['mark_as_notified']
+
+    @admin.action(description='Mark selected alerts as notified (no email sent)')
+    def mark_as_notified(self, request, queryset):
+        updated = queryset.filter(notified_at__isnull=True).update(
+            notified_at__isnull=timezone.now()
+        )
+        self.message_user(
+            request,
+            f"{updated} alert(s) marked as notified",
+            level=messages.success
+        )

@@ -170,6 +170,8 @@ MAILERS = {
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_MAIL'," \
 "VoltPC <noreply@voltpc.example>")
 
+SITE_URL = os.getenv('SITE_URL', '')
+
 # if DEBUG and 'test' not in sys.argv:
 #     MAILERS['default']['BACKEND'] = 'django.core.mail.backends.console.EmailBackend'
 
