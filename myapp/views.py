@@ -17,6 +17,7 @@ from .filters import apply_product_filters
 from .pagination import paginate
 from .feature_filters import build_sidebar_context
 from .forms import ReviewForm, StockAlerForm
+from .recommendations import get_related_products
 from .models import ( Product, 
                      Tag, 
                      Category,
@@ -88,6 +89,7 @@ def detail(request, slug):
     # Aggregate + Distribution
     reviews_qs = product.reviews.all()
     distribution = _rating_distribution(product)
+    related_products = get_related_products(product)
 
     return render(request, 'myapp/detail.html',
                   {
@@ -98,7 +100,8 @@ def detail(request, slug):
                       'existing_review': existing_review,
                       'can_review': can_review,
                       'has_purchased': has_purchased,
-                      'rating_distribution': distribution
+                      'rating_distribution': distribution,
+                      'related_products': related_products
                   })
 
 def _rating_distribution(product):
