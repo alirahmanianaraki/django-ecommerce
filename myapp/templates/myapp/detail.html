@@ -423,7 +423,6 @@
     {# NEW: related products #}
     {% if related_products %}
     <div class="mt-16 border-t border-slate-200 pt-10">
-
         <div class="flex items-end justify-between mb-6">
             <div>
                 <span class="text-xs font-semibold uppercase tracking-wider text-blue-600">
@@ -442,12 +441,11 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
             {% for related in related_products %}
-                {% include 'myapp/partials/product_card.html' with product=related %}
+                {% include 'myapp/partials/related_product_card.html' with product=related %}
             {% endfor %}
         </div>
-
     </div>
     {% endif %}
 </div>
