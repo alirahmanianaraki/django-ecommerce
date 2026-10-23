@@ -3,14 +3,34 @@
 [![Django](https://img.shields.io/badge/Django-6.1-green)](https://www.djangoproject.com/)
 [![PostgreSQL](https://img.shields.io/badge/Postgresql-18.6-green)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
-<img width="1767" height="865" alt="Django-Ecommerece-Ali-Rahmanianaraki" src="https://github.com/user-attachments/assets/cfe112fc-8338-4b8f-ab4d-1d2ca26b404d" />
-
 
 A full-featured e-commerce web application built with **Django 6.1**, designed as a computer parts store. It includes product browsing, cart management, user accounts, order placement, wishlists, email verification, password reset, and a fully styled responsive interface powered by **Tailwind CSS**.
 
 This project was built as a hands-on learning exercise to explore real-world Django patterns: session-based carts, custom user flows, service-layer logic, AJAX interactions, and template inheritance.
 
----
+<h3 align="center">📸 Project Screenshots</h3>
+<div align="center">
+
+<!-- Row 1 -->
+<a href="#img1"><img src="https://github.com/user-attachments/assets/1b9117ba-cad0-406f-b791-b8e40d661a74" width="280" height="280" alt="VoltPC Screenshot 1" /></a>&nbsp;&nbsp;
+<a href="#img2"><img src="https://github.com/user-attachments/assets/bf342d7b-575b-4984-81c1-41925c20404a" width="280" height="280" alt="VoltPC Screenshot 2" /></a><br/><br/>
+
+<!-- Row 2 -->
+<a href="#img3"><img src="https://github.com/user-attachments/assets/420ddccb-43d2-4509-8a10-281a0a14dac0" width="280" height="280" alt="VoltPC Screenshot 3" /></a>&nbsp;&nbsp;
+<a href="#img4"><img src="https://github.com/user-attachments/assets/d169960a-9453-4333-8e9a-ab9887a1a569" width="280" height="280" alt="VoltPC Screenshot 4" /></a><br/><br/>
+
+<!-- Row 3 -->
+<a href="#img5"><img src="https://github.com/user-attachments/assets/a7b34c54-a1b3-4463-8e14-42c962b77f86" width="280" height="280" alt="VoltPC Screenshot 5" /></a>&nbsp;&nbsp;
+<a href="#img6"><img src="https://github.com/user-attachments/assets/75a5862c-65c7-4cb1-b939-d6053e6e97d2" width="280" height="280" alt="VoltPC Screenshot 6" /></a><br/><br/>
+
+<!-- Row 4 -->
+<a href="#img7"><img src="https://github.com/user-attachments/assets/9f495f65-4a2c-4e9e-a519-5bffbb8a19a0" width="280" height="280" alt="VoltPC Screenshot 7" /></a>&nbsp;&nbsp;
+<a href="#img8"><img src="https://github.com/user-attachments/assets/9546f35e-10dc-4510-b226-1b14fd0087e5" width="280" height="280" alt="VoltPC Screenshot 8" /></a><br/><br/>
+
+<!-- Row 5 -->
+<a href="#img9"><img src="https://github.com/user-attachments/assets/96b493f3-79c9-41be-a328-03eca4e2655c" width="280" height="280" alt="VoltPC Screenshot 9" /></a>
+
+</div>
 
 ## ✨ Features
 
