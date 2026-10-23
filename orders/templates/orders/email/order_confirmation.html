@@ -57,7 +57,13 @@
                                     <td style="padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;">
                                         {{ item.product.title }}
                                         <div style="font-size:12px;color:#94a3b8;margin-top:2px;">
-                                            Qty {{ item.quantity }} × ${{ item.unit_price }}
+                                            Qty {{ item.quantity }} ×
+                                            {% if item.original_unit_price and item.original_unit_price > item.unit_price %}
+                                                <span style="color:#059669;font-weight:600;">${{ item.unit_price }}</span>
+                                                <span style="text-decoration:line-through;">${{ item.original_unit_price }}</span>
+                                            {% else %}
+                                                ${{ item.unit_price }}
+                                            {% endif %}
                                         </div>
                                     </td>
                                     <td style="padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#1e293b;text-align:right;white-space:nowrap;">

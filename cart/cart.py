@@ -126,26 +126,37 @@ class Cart():
     def __iter__(self):
         product_ids = self.cart.keys()
         products = Product.objects.filter(id__in=product_ids)
+        # Shallow copy of the top-level mapping
         cart = self.cart.copy()
+        # Deep-copy each entry so we never mutate the session dict
+        cart = {k: dict(v) for k, v in cart.items()}
 
         for product in products:
             cart[str(product.id)]['product'] = product
 
         for item in cart.keys():
-            cart[item]['price'] = Decimal(cart[item]['price'])
-            cart[item]['qty'] = Decimal(cart[item]['qty'])
-            cart[item]['total'] = Decimal(cart[item]['price'] * cart[item]['qty'])
-            yield cart[item]
+            entry = cart[item]
+            product = entry['product']
+            original_price = Decimal(entry['price'])
+            qty = Decimal(entry['qty'])
+            current_unit_price = product.get_effective_price()
+            entry['original_price'] = original_price
+            entry['price'] = current_unit_price
+            entry['has_discount'] = product.has_discount
+            entry['discount_per_unit'] = (original_price - current_unit_price) \
+                if product.has_discount else Decimal('0.00')
+            entry['qty'] = qty
+            entry['total'] = (current_unit_price * qty).quantize(Decimal('0.01'))
+            yield entry
 
     def get_total_price(self):
-        cart = self.cart.copy()
-        total_price = Decimal(0)
-        for item in cart.keys():
-            price = Decimal(cart[item]['price'])
-            quantity = Decimal(cart[item]['qty'])
-            item_price = price * quantity
-            total_price += item_price
-        return total_price
+        """
+        Live subtotal: sum of (effective price * qty) for every line
+        """
+        return sum(
+            (item['total'] for item in self),
+            Decimal('0.00'),
+        )
 
     def add(self, product_id, product_quantity):
         product = Product.objects.get(pk=product_id)

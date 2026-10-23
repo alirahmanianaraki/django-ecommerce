@@ -318,6 +318,15 @@ class Product(models.Model):
         decimal_places=2,
         max_digits=10
         )
+    discount_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Leave blank if this product is not on sale. Must be lower than 'price'"
+    )
+    discount_starts_at = models.DateTimeField(null=True, blank=True)
+    discount_ends_at = models.DateTimeField(null=True, blank=True)
     slug = models.SlugField(
         unique=True,
         blank=True,
@@ -380,6 +389,26 @@ class Product(models.Model):
             search_vector=SearchVector('title', weight='A') + SearchVector('description', weight='B')
         )
 
+    def clean(self):
+        super().clean()
+        if self.discount_price is not None:
+            if self.discount_price <= 0:
+                raise ValidationError(
+                    {'discount_price': "Discount price must be greater than 0"}
+                )
+            if self.price is not None and self.discount_price >= self.price:
+                raise ValidationError(
+                    {'discount_price': 'Discount price must be lower than the regular price'}
+                )
+            if (
+                self.discount_starts_at
+                and self.discount_ends_at
+                and self.discount_starts_at >= self.discount_ends_at
+            ):
+                raise ValidationError(
+                    {'discount_ends_at': 'Sale end date must be after the start date'}
+                )
+
     def __str__(self):
         return f'{self.title}--id: {self.pk}'
 
@@ -388,6 +417,41 @@ class Product(models.Model):
         return self.features.filter(
             feature__is_visible_on_product_page=True
         ).exists()
+
+    @property
+    def has_discount(self):
+        """
+        True if a valid discount_price is set AND we're inside the sale window
+        """
+        if not self.discount_price:
+            return False
+        if self.discount_price >= self.price:
+            return False
+        now = timezone.now()
+        if self.discount_starts_at and now < self.discount_starts_at:
+            return False
+        if self.discount_ends_at and now > self.discount_ends_at:
+            return False
+        return True
+
+    def get_effective_price(self):
+        """
+        The price a customer actually pays.
+        Falls back to 'price' when there's no active discount.
+        """
+        if self.has_discount:
+            return self.discount_price
+        return self.price
+
+    @property
+    def discount_percent(self):
+        """
+        Rounded integer percent off
+        """
+        if not self.has_discount:
+            return 0
+        saving = self.price - self.discount_price
+        return int((saving / self.price) * 100)
 
 class ProductImage(models.Model):
     image = models.ImageField(
@@ -498,3 +562,4 @@ class Coupon(models.Model):
 
         # Never discount below zero, and never above the subtotal
         return min(raw, subtotal).quantize(Decimal('0.01'))
+

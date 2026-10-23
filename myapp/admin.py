@@ -32,13 +32,29 @@ class ProductImageInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'price', 'stock', 'is_available']
+    list_display = ['title', 'price', 'discount_price', 'stock', 'is_available', 'has_discount']
     list_filter = ['is_available', 'category']
     search_fields = ['title']
     prepopulated_fields = {'slug': ('title', )}
     filter_horizontal = ['category', 'tag']
     inlines = [ProductImageInline, ProductFeatureInline]
     actions = ['notify_waiting_customers']
+
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'slug', 'description', 'is_available')
+        }),
+        ('Pricing', {
+            'fields': ('price', 'discount_price', 'discount_starts_at', 'discount_ends_at')
+        }),
+        ('Inventory & Relations', {
+            'fields': ('stock', 'category', 'tag')
+        }),
+    )
+
+    @admin.display(boolean=True, description='On sale?')
+    def has_discount(self, obj):
+        return obj.has_discount
 
     @admin.action(description='Notify waiting stock alerts for selected products')
     def notify_waiting_customers(self, request, queryset):
@@ -94,7 +110,6 @@ class ProductAdmin(admin.ModelAdmin):
                 f"{total_failed} alert(s) failed to send",
                 level=messages.WARNING
             )
-
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):

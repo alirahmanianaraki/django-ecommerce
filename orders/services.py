@@ -119,12 +119,13 @@ def place_order(user, cart, address):
             Product.objects.filter(pk=product.pk).update(
                 stock=F('stock') - requested
             )
-
+            paid_price = product.get_effective_price()
             OrderItem.objects.create(
                 order=order,
                 product=product,
                 quantity=requested,
-                unit_price=product.price,
+                unit_price=paid_price,
+                original_unit_price=product.price,
             )
 
     cart.clear()

@@ -52,7 +52,14 @@
         <!-- Price pushed to bottom via flex-1 + mt-auto -->
         <div class="mt-auto pt-2.5 flex items-center justify-between">
             <span class="text-base font-bold text-slate-800">
-                ${{ product.price }}
+                {% if product.has_discount %}
+                    <span class="text-xs font-normal text-slate-400 line-through mr-1">
+                        ${{ product.price }}
+                    </span>
+                    <span class="text-emerald-600">${{ product.discount_price }}</span>
+                {% else %}
+                    ${{ product.price }}
+                {% endif %}
             </span>
 
             {% if product.stock > 0 %}

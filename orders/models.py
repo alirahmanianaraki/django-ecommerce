@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from decimal import Decimal
 from myapp.models import Product
 
 # Create your models here.
@@ -50,7 +51,24 @@ class OrderItem(models.Model):
         max_digits=10, 
         decimal_places=2,
     )
+    original_unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The product's regular price at the moment of ordering, before any discount"
+    )
 
     @property
     def total_price(self):
         return self.quantity * self.unit_price
+
+    @property
+    def discount_amount(self):
+        """How much was saved on this line"""
+        if not self.original_unit_price:
+            return Decimal('0.00')
+        per_unit = self.original_unit_price - self.unit_price
+        if per_unit <= 0:
+            return Decimal('0.00')
+        return (per_unit * self.quantity).quantize(Decimal('0.01'))

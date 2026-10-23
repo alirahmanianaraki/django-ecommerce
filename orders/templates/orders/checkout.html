@@ -126,7 +126,15 @@
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold text-slate-800 truncate">{{ item.product.title }}</p>
                             <p class="text-xs text-slate-400 mt-0.5">Product #{{ item.product.id }}</p>
-                            <p class="text-xs text-slate-500 mt-1">${{ item.price }} × {{ item.qty }}</p>
+                            <p class="text-xs text-slate-500 mt-1">
+                                {% if item.has_discount %}
+                                    <span class="text-emerald-600 font-medium">${{ item.price }}</span>
+                                    <span class="line-through text-slate-400">${{ item.original_price }}</span>
+                                {% else %}
+                                    ${{ item.price }}
+                                {% endif %}
+                                × {{ item.qty }}
+                            </p>
                         </div>
 
                         <!-- Line total -->

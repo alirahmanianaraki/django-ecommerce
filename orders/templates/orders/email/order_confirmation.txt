@@ -9,7 +9,7 @@ Your order number is #{{ order.pk }}.
 
 Items
 ----------------------------------------
-{% for item in items %}- {{ item.product.title }} × {{ item.quantity }}  (${{ item.unit_price }} each)  =  ${{ item.total_price }}
+{% for item in items %}- {{ item.product.title }} × {{ item.quantity }}  ({% if item.original_unit_price and item.original_unit_price > item.unit_price %}${{ item.unit_price }} each, was ${{ item.original_unit_price }}{% else %}${{ item.unit_price }} each{% endif %})  =  ${{ item.total_price }}
 {% endfor %}
 {% if order.discount_amount and order.discount_amount > 0 %}
 Discount ({{ order.coupon_code }}): -${{ order.discount_amount }}

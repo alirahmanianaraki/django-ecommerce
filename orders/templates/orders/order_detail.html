@@ -134,7 +134,13 @@
                         ${{ item.total_price }}
                     </p>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        ${{ item.unit_price }} each
+                        {% if item.original_unit_price and item.original_unit_price > item.unit_price %}
+                            <span class="text-emerald-600 font-medium">${{ item.unit_price }}</span>
+                            <span class="line-through">${{ item.original_unit_price }}</span>
+                            each
+                        {% else %}
+                            ${{ item.unit_price }} each
+                        {% endif %}
                     </p>
                 </div>
             </div>

@@ -50,7 +50,7 @@ class CartViewTests(TestCase):
             {"product_id": str(self.product.pk)},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"qty": 0, "total": "0"})
+        self.assertEqual(response.json(), {"qty": 0, "total": "0.00"})
 
     def test_cart_overview_renders(self):
         response = self.client.get(reverse("cart:cart_overview"))

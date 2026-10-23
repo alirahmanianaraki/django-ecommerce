@@ -64,8 +64,17 @@
                             </a>
                             <p class="text-xs text-slate-400 mt-0.5">Product #{{ item.product.id }}</p>
 
-                            <div class="flex items-center gap-3 mt-2">
-                                <span class="text-sm font-medium text-slate-600">${{ item.price }}</span>
+                            <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                {% if item.has_discount %}
+                                    <span class="text-sm font-medium text-emerald-600">${{ item.price }}</span>
+                                    <span class="text-sm font-normal text-slate-400 line-through">${{ item.original_price }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded
+                                                 bg-rose-100 text-rose-700">
+                                        SALE
+                                    </span>
+                                {% else %}
+                                    <span class="text-sm font-medium text-slate-600">${{ item.price }}</span>
+                                {% endif %}
                                 <span class="w-1 h-1 rounded-full bg-slate-300"></span>
                                 <span class="text-sm text-slate-500">
                                     Line total:

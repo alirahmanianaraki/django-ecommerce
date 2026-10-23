@@ -37,6 +37,17 @@
             {% endif %}">
             {% if product.stock > 0 %}In Stock{% else %}Sold Out{% endif %}
         </span>
+
+        <!-- Discount badge -->
+        {% if product.has_discount %}
+        <span class="absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full
+                     bg-gradient-to-r from-rose-500 to-pink-600 text-white
+                     shadow-md shadow-rose-500/40">
+            -{{ product.discount_percent }}%
+        </span>
+        {% endif %}
+
+
     </div>
 
     <!-- Details -->
@@ -49,15 +60,25 @@
             {{ product.description }}
         </p>
 
+        
         <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
             <div>
                 <span class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">
                     Price
                 </span>
 
-                <p class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    ${{ product.price }}
-                </p>
+                {% if product.has_discount %}
+                    <p class="text-sm font-medium text-slate-400 line-through">
+                        ${{ product.price }}
+                    </p>
+                    <p class="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                        ${{ product.discount_price }}
+                    </p>
+                {% else %}
+                    <p class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                        ${{ product.price }}
+                    </p>
+                {% endif %}
             </div>
 
             <span class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-110 transition-transform">
@@ -72,5 +93,6 @@
                 </svg>
             </span>
         </div>
+
     </div>
 </a>
