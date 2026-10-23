@@ -65,6 +65,35 @@
                                     </td>
                                 </tr>
                                 {% endfor %}
+
+                                <!-- Coupon / Discount Row (only shown when a coupon was applied) -->
+                                {% if order.coupon_code and order.discount_amount > 0 %}
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:#059669;">
+                                        Discount
+                                        <span style="display:inline-block;margin-left:6px;padding:2px 8px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:4px;font-size:12px;font-weight:600;color:#047857;">
+                                            {{ order.coupon_code }}
+                                        </span>
+                                    </td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px;font-weight:600;color:#059669;text-align:right;white-space:nowrap;">
+                                        -${{ order.discount_amount }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                <!-- Subtotal (shown only when there's a discount, so the breakdown is clear) -->
+                                {% if order.coupon_code and order.discount_amount > 0 %}
+                                <tr>
+                                    <td style="padding:12px 0;font-size:13px;color:#64748b;">
+                                        Subtotal
+                                    </td>
+                                    <td style="padding:12px 0;font-size:13px;color:#64748b;text-align:right;white-space:nowrap;">
+                                        ${{ order.subtotal_amount }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                <!-- Total -->
                                 <tr>
                                     <td style="padding:16px 0 0 0;font-size:14px;font-weight:700;color:#0f172a;">
                                         Total

@@ -6,6 +6,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.utils import timezone
+from decimal import Decimal
 
 # Create your models here.
 class Feature(models.Model):
@@ -398,3 +400,101 @@ class ProductImage(models.Model):
         related_name='product_images',
     )
 
+class Coupon(models.Model):
+    """
+    A discount code that can be applied to a cart
+    """
+    class DiscountType(models.TextChoices):
+        PERCENT = 'percent', 'Percentage'
+        FIXED = 'fixed', 'Fixed amount'
+
+    code = models.CharField(max_length=50, unique=True)
+    description = models.CharField(max_length=200, blank=True)
+    discount_type = models.CharField(
+        max_length=10,
+        choices=DiscountType.choices,
+        default=DiscountType.PERCENT
+    )
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Percent (0-100) for 'percent', or amount for 'fixed'.",
+    )
+    min_order_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Minimum cart subtotal to use this coupon"
+    )
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
+    max_uses = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text='Leave blank for unlimited uses'
+    )
+    used_count = models.PositiveIntegerField(default=0)
+    one_per_user = models.BooleanField(
+        default=False,
+        help_text='If ture, each user may redeem this coupon only once'
+    )
+    is_active= models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(value__gt=0),
+                name='coupon_value_positive'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.code} ({self.get_discount_type_display()}: {self.value})"
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if self.discount_type == self.DiscountType.PERCENT and self.value > 100:
+            raise ValidationError(
+                {'value': 'A percentage coupon cannot exceed 100%'}
+            )
+        if self.valid_from and self.valid_until and self.valid_from >= self.valid_until:
+            raise ValidationError(
+                {'valid_unitl': "valid_until must be after valid_from"}
+            )
+
+    @property
+    def is_currently_valid(self):
+        """Time-window check"""
+        now = timezone.now()
+        if not self.is_active:
+            return False
+        if self.valid_from and now < self.valid_from:
+            return False
+        if self.valid_until and now > self.valid_until:
+            return False
+        if self.max_uses is not None and self.used_count >= self.max_uses:
+            return False
+        return True
+
+    def calculate_discount(self, subtotal):
+        """
+        Return the dollar amount to subtract from 'subtotal'.
+        """
+        subtotal = Decimal(subtotal)
+        if subtotal <= 0:
+            return Decimal('0.00')
+
+        if self.discount_type == self.DiscountType.PERCENT:
+            raw = subtotal * (self.value / Decimal('100'))
+        else:
+            raw = self.value
+
+        # Never discount below zero, and never above the subtotal
+        return min(raw, subtotal).quantize(Decimal('0.01'))

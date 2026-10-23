@@ -135,12 +135,56 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-500">Subtotal</span>
-                            <span class="font-medium text-slate-800">${{ cart.get_total_price }}</span>
+                            <span class="font-medium text-slate-800">${{ cart.get_subtotal }}</span>
                         </div>
+                        {% if cart.coupon %}
+                        <div class="flex items-center justify-between text-emerald-700">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                </svg>
+                                Discount ({{ cart.coupon.code }})
+                            </span>
+                            <span class="font-medium">-${{ cart.get_discount_amount }}</span>
+                        </div>
+                        {% endif %}
                         <div class="flex items-center justify-between">
                             <span class="text-slate-500">Shipping</span>
                             <span class="font-medium text-emerald-600">Free</span>
                         </div>
+                    </div>
+
+                    <!-- Coupon UI -->
+                    <div class="mt-5 pt-4 border-t border-slate-200">
+                        {% if cart.coupon %}
+                            <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200
+                                        rounded-lg px-3 py-2">
+                                <span class="text-xs font-semibold text-emerald-800">
+                                    Coupon <span class="font-mono">{{ cart.coupon.code }}</span> applied
+                                </span>
+                                <button type="button" id="remove-coupon-btn"
+                                        class="text-xs font-medium text-red-600 hover:text-red-800 transition-colors">
+                                    Remove
+                                </button>
+                            </div>
+                        {% else %}
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                                Have a coupon?
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" id="coupon-input" placeholder="Enter code"
+                                    class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg
+                                            focus:outline-none focus:ring-2 focus:ring-blue-500
+                                            font-mono uppercase">
+                                <button type="button" id="apply-coupon-btn"
+                                        class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700
+                                            text-white text-sm font-semibold transition-colors">
+                                    Apply
+                                </button>
+                            </div>
+                            <p id="coupon-feedback" class="text-xs mt-2 text-transparent select-none" aria-live="polite">&nbsp;</p>
+                        {% endif %}
                     </div>
 
                     <div class="border-t border-slate-200 my-5"></div>
@@ -148,7 +192,7 @@
                     <div class="flex items-end justify-between mb-6">
                         <span class="text-sm font-semibold text-slate-600">Total</span>
                         <span class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            ${{ cart.get_total_price }}
+                            ${{ cart.get_total_after_discount }}
                         </span>
                     </div>
                     <a href="{% url 'orders:checkout' %}">
@@ -234,5 +278,47 @@
             }
         })
     });
+
+    function showCouponFeedback(message, kind) {
+    const el = document.getElementById('coupon-feedback');
+    if (!el) return;
+    el.classList.remove('text-transparent', 'text-red-600', 'text-emerald-700');
+    el.classList.add(kind === 'error' ? 'text-red-600' : 'text-emerald-700');
+    el.textContent = message;
+}
+
+$(document).on('click', '#apply-coupon-btn', function (e) {
+    e.preventDefault();
+    const code = $('#coupon-input').val().trim();
+    if (!code) {
+        showCouponFeedback('Please enter a coupon code.', 'error');
+        return;
+    }
+    $.ajax({
+        type: 'POST',
+        url: '{% url "cart:apply_coupon" %}',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            code: code,
+        },
+        success: function () {
+            location.reload();
+        },
+        error: function (xhr) {
+            const data = xhr.responseJSON || {};
+            showCouponFeedback(data.error || 'Could not apply this coupon.', 'error');
+        },
+    });
+});
+
+$(document).on('click', '#remove-coupon-btn', function (e) {
+    e.preventDefault();
+    $.ajax({
+        type: 'POST',
+        url: '{% url "cart:remove_coupon" %}',
+        data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+        success: function () { location.reload(); },
+    });
+});
 </script>
 {% endblock %}

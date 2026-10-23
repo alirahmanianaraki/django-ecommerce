@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
 from .cart import Cart
 
 # Create your views here.
@@ -21,6 +22,7 @@ def cart_overview(request):
                   {
                       'cart': cart
                   })
+
 @require_POST
 def update_cart(request):
     cart = Cart(request)
@@ -42,5 +44,34 @@ def delete_cart(request):
             "qty": cart_quantity,
             'total': cart_total,
         })
+
+@require_POST
+def apply_coupon(request):
+    cart = Cart(request)
+    code = request.POST.get('code', '')
+    try:
+        coupon = cart.apply_coupon(code, user=request.user)
+    except ValidationError as exc:
+        return JsonResponse({
+            'success': False,
+            'error': exc.messages[0]
+        },
+        status=400
+        )
+    return JsonResponse({
+        'success': True,
+        'code': coupon.code,
+        'discount': str(cart.get_discount_amount()),
+        'total': str(cart.get_total_after_discount())
+    })
+
+@require_POST
+def remove_coupon(request):
+    cart = Cart(request)
+    cart.remove_coupon()
+    return JsonResponse({
+        'success': True,
+        'total': str(cart.get_total_after_discount())
+    })
 
     

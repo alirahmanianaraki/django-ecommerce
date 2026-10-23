@@ -21,6 +21,17 @@ class Order(models.Model):
     shipping_state = models.CharField(max_length=150, blank=True)
     shipping_postal_code = models.CharField(max_length=50, blank=True)
     shipping_country = models.CharField(max_length=150, blank=True)
+    coupon_code = models.CharField(max_length=50, blank=True)
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    subtotal_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+    )
 
     def __str__(self):
         return f"Order #{self.pk} - {self.user}"

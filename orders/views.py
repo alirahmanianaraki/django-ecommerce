@@ -11,6 +11,7 @@ from .services import (
     place_order, 
     InsufficientStock,
     MissingShippingAddress,
+    InvalidCoupon,
 )
 from .emails import send_order_confirmation
 
@@ -60,6 +61,12 @@ def place_order_view(request):
             'redirect': 'address',
         }, status=400)
     except InsufficientStock as exc:
+        return JsonResponse({
+            'success': False,
+            'error': str(exc),
+            'redirect': 'cart',
+        }, status=400)
+    except InvalidCoupon as exc:
         return JsonResponse({
             'success': False,
             'error': str(exc),

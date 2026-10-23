@@ -11,7 +11,11 @@ Items
 ----------------------------------------
 {% for item in items %}- {{ item.product.title }} × {{ item.quantity }}  (${{ item.unit_price }} each)  =  ${{ item.total_price }}
 {% endfor %}
+{% if order.discount_amount and order.discount_amount > 0 %}
+Discount ({{ order.coupon_code }}): -${{ order.discount_amount }}
+{% endif %}
 Total: ${{ order.total_amount }}
+
 
 Shipped to
 ----------------------------------------

@@ -4,10 +4,9 @@ from django import forms
 from .models import (
     Product, ProductImage, Tag, Category, 
     Feature, FeatureValue, ProductFeature,
-    Review, StockAlert
+    Review, StockAlert, Coupon
     )
 # Register your models here.
-
 class CategoryAdminForm(forms.ModelForm):
     class Meta:
         model = Category
@@ -165,3 +164,14 @@ class StockAlertAdmin(admin.ModelAdmin):
             f"{updated} alert(s) marked as notified",
             level=messages.success
         )
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = [
+        'code', 'discount_type', 'value',
+        'min_order_amount', 'used_count', 'max_uses',
+        'is_active', 'valid_until'
+    ]
+    list_filter = ['discount_type', 'is_active']
+    search_fields = ['code', 'description']
+    readonly_fields = ['used_count', 'created_at']

@@ -146,12 +146,18 @@
             <div class="space-y-2">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-slate-600">Subtotal</span>
-                    <span class="font-medium text-slate-800">${{ order.total_amount }}</span>
+                    <span class="font-medium text-slate-800">${{ order.subtotal_amount }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-slate-600">Shipping</span>
                     <span class="font-medium text-emerald-600">Free</span>
                 </div>
+                {% if order.discount_amount > 0 %}
+                <div class="flex items-center justify-between text-sm text-emerald-700">
+                    <span>Discount ({{ order.coupon_code }})</span>
+                    <span class="font-medium">-${{ order.discount_amount }}</span>
+                </div>
+                {% endif %}
             </div>
             <div class="border-t border-blue-200 mt-4 pt-4 flex items-end justify-between">
                 <span class="text-base font-semibold text-slate-700">Total</span>

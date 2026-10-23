@@ -149,8 +149,14 @@
                     <div class="space-y-2">
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-slate-600">Subtotal</span>
-                            <span class="font-medium text-slate-800">${{ cart.get_total_price }}</span>
+                            <span class="font-medium text-slate-800">${{ cart.get_subtotal }}</span>
                         </div>
+                        {% if cart.coupon %}
+                        <div class="flex items-center justify-between text-sm text-emerald-700">
+                            <span>Discount ({{ cart.coupon.code }})</span>
+                            <span class="font-medium">-${{ cart.get_discount_amount }}</span>
+                        </div>
+                        {% endif %}
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-slate-600">Shipping</span>
                             <span class="font-medium text-emerald-600">Free</span>
@@ -159,7 +165,7 @@
                     <div class="border-t border-blue-200 mt-4 pt-4 flex items-end justify-between">
                         <span class="text-base font-semibold text-slate-700">Total</span>
                         <span class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            ${{ cart.get_total_price }}
+                            ${{ cart.get_total_after_discount }}
                         </span>
                     </div>
                 </div>
@@ -224,6 +230,8 @@
                     window.location.replace("{% url 'myapp:index' %}");
                 } else if (data.redirect == 'address') {
                     window.location.replace("{% url 'users:add_address' %}");
+                } else if (data.redirect === 'cart') {
+                    window.location.replace("{% url 'cart:cart_overview' %}");
                 } else {
                     window.location.replace("{% url 'orders:order_failed' %}");
                 } 

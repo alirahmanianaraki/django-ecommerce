@@ -1,9 +1,8 @@
 from django.db import transaction
 from django.db.models import F
-
-from myapp.models import Product
-
+from myapp.models import Product, Coupon
 from .models import Order, OrderItem
+from decimal import Decimal
 
 
 class InsufficientStock(Exception):
@@ -19,6 +18,10 @@ class InsufficientStock(Exception):
 
 class MissingShippingAddress(Exception):
     """Raised when a place_order call has no shipping address"""
+    pass
+
+class InvalidCoupon(Exception):
+    """Raised when the cart's coupon cannot be used at checkout"""
     pass
 
 def place_order(user, cart, address):
@@ -50,9 +53,54 @@ def place_order(user, cart, address):
             if product.stock < requested:
                 raise InsufficientStock(product, requested, product.stock)
 
+        coupon = cart.coupon
+        subtotal = cart.get_subtotal()
+        discount_amount = Decimal('0.00')
+        coupon_code = ''
+
+        if coupon is not None:
+            # Lock the coupon row for this transaction
+            try:
+                locked_coupon = (
+                    Coupon.objects.select_for_update().get(pk=coupon.pk)
+                )
+            except Coupon.DoesNotExist:
+                raise InvalidCoupon('This coupon no longer exists')
+
+            if not locked_coupon.is_currently_valid:
+                raise InvalidCoupon('This coupon no longer exists')
+
+            subtotal = cart.get_subtotal()
+            if subtotal < locked_coupon.min_order_amount:
+                raise InvalidCoupon(
+                    f'This coupon require a minimum order of'
+                    f"{locked_coupon.min_order_amount}"
+                )
+
+            if locked_coupon.one_per_user:
+                if Order.objects.filter(
+                    user=user, coupon_code=locked_coupon.code
+                ).exists():
+                    raise InvalidCoupon('You have already used this coupon')
+
+            discount_amount = locked_coupon.calculate_discount(subtotal)
+            coupon_code = locked_coupon.code
+
+            # Atomically increment usage
+            Coupon.objects.filter(pk=locked_coupon.pk).update(
+                used_count=F('used_count') + 1
+            )
+
+        total_amount = (subtotal - discount_amount).quantize(
+            Decimal('0.01')
+        )
+
         order = Order.objects.create(
             user=user,
-            total_amount=cart.get_total_price(),
+            subtotal_amount=subtotal,
+            total_amount=total_amount,
+            coupon_code=coupon_code,
+            discount_amount=discount_amount,
 
             # Snapshot the address at the moment of ordering.
             shipping_title=address.title,
@@ -80,5 +128,4 @@ def place_order(user, cart, address):
             )
 
     cart.clear()
-
     return order
