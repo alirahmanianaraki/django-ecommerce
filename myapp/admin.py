@@ -172,12 +172,12 @@ class StockAlertAdmin(admin.ModelAdmin):
     @admin.action(description='Mark selected alerts as notified (no email sent)')
     def mark_as_notified(self, request, queryset):
         updated = queryset.filter(notified_at__isnull=True).update(
-            notified_at__isnull=timezone.now()
+            notified_at=timezone.now()
         )
         self.message_user(
             request,
             f"{updated} alert(s) marked as notified",
-            level=messages.success
+            level=messages.SUCCESS
         )
 
 @admin.register(Coupon)
