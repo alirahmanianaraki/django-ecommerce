@@ -140,9 +140,57 @@ def place_order(user, cart, address):
     cart.clear()
     return order
 
+def _apply_status_change(order, new_status, changed_by, note, tracking_number):
+    """
+    Mutates Order, restores stock if needed, appends event, 
+    sends the status email.
+    """
+    old_status = order.status
+
+    with transaction.atomic():
+        order.status = new_status
+        order.status_updated_at = timezone.now()
+        update_fields = ['status', 'status_updated_at']
+
+        if new_status == Order.Status.PAID:
+            order.is_paied = True
+            update_fields.append('is_paied')
+        if new_status == Order.Status.SHIPPED and tracking_number:
+            order.tracking_number = tracking_number.strip()
+            update_fields.append('tracking_number')
+
+        order.save(update_fields=update_fields)
+
+        if new_status == Order.Status.CANCELLED:
+            for item in order.orderitem_set.all():
+                Product.objects.filter(pk=item.product_id).update(
+                    stock=F('stock') + item.quantity
+                )
+
+        event = OrderStatusEvent.objects.create(
+            order=order,
+            from_status=old_status,
+            to_status=new_status,
+            changed_by=changed_by if (
+                changed_by and changed_by.is_authenticated
+            ) else None,
+            note=note.strip()
+        )
+
+    try:
+        from .emails import send_status_update_email
+        send_status_update_email(order, old_status, new_status)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            'Status update email failed for order #%s', order.pk
+        )
+
+    return event
+
 def transition_order(order, new_status, changed_by=None, note='', tracking_number=''):
     """
-    Move 'order' to 'new_status', recording the change as an OrderStatusEvent.
+    STRICT transition. Enforces the state machine in Order.ALLOWED_TRASITIONS
     """
     if new_status == order.status:
         return None
@@ -151,55 +199,36 @@ def transition_order(order, new_status, changed_by=None, note='', tracking_numbe
         raise InvalidStatusTransition(
             f"Cannot move order #{order.pk} from '{order.status}' to '{new_status}'"
         )
+    if new_status == Order.Status.SHIPPED and not tracking_number.strip():
+        raise TrackingNumberRequired(
+            'A tracking number is required to mark an order as shipped'
+        )
+
+    return _apply_status_change(
+        order, new_status, changed_by, note, tracking_number
+    )
+
+def override_order_status(order, new_status, changed_by=None, note='', tracking_number=''):
+    """
+    LOOSE transition. Skips the state-machine check so an admin can force any status.
+    Requires and explicit 'note' explaining why.
+    """
+    if not note or not note.strip():
+        raise ValueError(
+            'A note explaining the override is required'
+        )
+    if new_status not in {choice[0] for choice in Order.Status.choices}:
+        raise ValueError(f"'{new_status}' is not a valid status")
+    if new_status == order.status:
+        return None
 
     if new_status == Order.Status.SHIPPED and not tracking_number.strip():
         raise TrackingNumberRequired(
-            'A tracking numbmer is required to mark an order as shipped'
+            'A tracking nnumber is required to mark an order as shipped'
         )
 
-    old_status = order.status
+    prefixed_note = f"Manual override: {note.strip()}"
 
-    with transaction.atomic():
-        # 1. Persist the status change on the order row
-        order.status = new_status
-        order.status_updated_at = timezone.now()
-        update_fields = ['status', 'status_updated_at']
-
-        if new_status == Order.Status.PAID:
-            order.is_paied = True
-            update_fields.append('is_paied')
-
-        if new_status == Order.Status.SHIPPED and tracking_number:
-            order.tracking_number = tracking_number.strip()
-            update_fields.append('tracking_number')
-
-        order.save(update_fields=update_fields)
-
-        # 2. Restore stock if we're cancelling a not yet shipped order
-        if new_status == Order.Status.CANCELLED:
-            # Reload items to be safe
-            for item in order.orderitem_set.all():
-                Product.objects.filter(pk=item.product_id).update(
-                    stock=F('stock') + item.quantity
-                )
-
-        # 3. Append the audit event.
-        event = OrderStatusEvent.objects.create(
-            order=order,
-            from_status=old_status,
-            to_status=new_status,
-            changed_by=changed_by if (changed_by and changed_by.is_authenticated) else None,
-            note=note.strip()
-        )
-
-    # Send a status-update email
-    try:
-        from .emails import send_status_update_email
-        send_status_update_email(order, old_status, new_status)
-    except Exception:
-        import logging
-        logging.getLogger(__name__).exception(
-            f"Status update email failed for order #{order.pk}"
-        )
-
-    return event
+    return _apply_status_change(
+        order, new_status, changed_by, prefixed_note, tracking_number
+    )

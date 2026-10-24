@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'orders.apps.OrdersConfig',
     'wishlists.apps.WishlistsConfig',
+    'django_extensions',
     'django.contrib.postgres', # Enables PostgreSQL-specific features
     "django.contrib.admin",
     "django.contrib.auth",

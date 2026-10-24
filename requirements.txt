@@ -1,8 +1,12 @@
 asgiref==3.12.1
 Django==6.1.1
+django-extensions==4.1
 pillow==12.3.0
 psycopg==3.3.6
 psycopg-binary==3.3.6
+psycopg2-binary==2.9.13
+pydotplus==2.0.2
+pyparsing==3.3.3
 python-dotenv==1.2.3
 six==1.17.0
 slugify==0.0.1

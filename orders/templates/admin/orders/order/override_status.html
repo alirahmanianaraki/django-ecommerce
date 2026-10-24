@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:orders_order_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; <a href="{% url 'admin:orders_order_change' order.pk %}">Order #{{ order.pk }}</a>
+    &rsaquo; {% translate "Override status" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <fieldset class="module aligned">
+            <h2>Current state</h2>
+            <div class="form-row">
+                <div>
+                    <label>Current status:</label>
+                    <div><strong>{{ order.get_status_display }}</strong></div>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="module aligned">
+            <h2>Override</h2>
+            {% for field in form %}
+                <div class="form-row{% if field.errors %} errors{% endif %}">
+                    {{ field.errors }}
+                    <div>
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="help">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <div class="form-row errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+        </fieldset>
+
+        <div class="submit-row">
+            <input type="submit" value="Apply override" class="default">
+            <a href="{% url 'admin:orders_order_change' order.pk %}" class="closelink">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
