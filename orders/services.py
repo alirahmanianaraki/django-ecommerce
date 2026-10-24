@@ -1,10 +1,11 @@
 from django.db import transaction
 from django.db.models import F
-from myapp.models import Product, Coupon
-from .models import Order, OrderItem
 from decimal import Decimal
+from django.utils import timezone
+from myapp.models import Product, Coupon
+from .models import Order, OrderItem, OrderStatusEvent
 
-
+# Exceptions
 class InsufficientStock(Exception):
     """Raised when a cart line asks for more units than are in stock."""
 
@@ -22,6 +23,14 @@ class MissingShippingAddress(Exception):
 
 class InvalidCoupon(Exception):
     """Raised when the cart's coupon cannot be used at checkout"""
+    pass
+
+class InvalidStatusTransition(Exception):
+    """Riased when an order cannot legally move to the requested status"""
+    pass
+
+class TrackingNumberRequired(Exception):
+    """Raised when shipping an order without a tracking number"""
     pass
 
 def place_order(user, cart, address):
@@ -130,3 +139,67 @@ def place_order(user, cart, address):
 
     cart.clear()
     return order
+
+def transition_order(order, new_status, changed_by=None, note='', tracking_number=''):
+    """
+    Move 'order' to 'new_status', recording the change as an OrderStatusEvent.
+    """
+    if new_status == order.status:
+        return None
+
+    if not order.can_transition_to(new_status):
+        raise InvalidStatusTransition(
+            f"Cannot move order #{order.pk} from '{order.status}' to '{new_status}'"
+        )
+
+    if new_status == Order.Status.SHIPPED and not tracking_number.strip():
+        raise TrackingNumberRequired(
+            'A tracking numbmer is required to mark an order as shipped'
+        )
+
+    old_status = order.status
+
+    with transaction.atomic():
+        # 1. Persist the status change on the order row
+        order.status = new_status
+        order.status_updated_at = timezone.now()
+        update_fields = ['status', 'status_updated_at']
+
+        if new_status == Order.Status.PAID:
+            order.is_paied = True
+            update_fields.append('is_paied')
+
+        if new_status == Order.Status.SHIPPED and tracking_number:
+            order.tracking_number = tracking_number.strip()
+            update_fields.append('tracking_number')
+
+        order.save(update_fields=update_fields)
+
+        # 2. Restore stock if we're cancelling a not yet shipped order
+        if new_status == Order.Status.CANCELLED:
+            # Reload items to be safe
+            for item in order.orderitem_set.all():
+                Product.objects.filter(pk=item.product_id).update(
+                    stock=F('stock') + item.quantity
+                )
+
+        # 3. Append the audit event.
+        event = OrderStatusEvent.objects.create(
+            order=order,
+            from_status=old_status,
+            to_status=new_status,
+            changed_by=changed_by if (changed_by and changed_by.is_authenticated) else None,
+            note=note.strip()
+        )
+
+    # Send a status-update email
+    try:
+        from .emails import send_status_update_email
+        send_status_update_email(order, old_status, new_status)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            f"Status update email failed for order #{order.pk}"
+        )
+
+    return event

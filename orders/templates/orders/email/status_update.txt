@@ -1,0 +1,17 @@
+{% autoescape off %}Order #{{ order.pk }} — status update
+{{ site_name }}
+========================================
+
+Hi {{ order.user.get_full_name|default:order.user.username }},
+
+Your order #{{ order.pk }} has changed status from
+"{{ old_status }}" to "{{ new_status }}".
+
+{% if new_status == 'shipped' and order.tracking_number %}Tracking number: {{ order.tracking_number }}
+{% endif %}{% if new_status == 'cancelled' %}No charge will be made on your card. If you were already charged, a refund
+will be issued within a few business days.
+{% endif %}
+View your order: {{ site_name }}/orders/my-orders/{{ order.pk }}/
+
+— The {{ site_name }} team
+{% endautoescape %}

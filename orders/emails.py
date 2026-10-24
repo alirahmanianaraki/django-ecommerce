@@ -32,6 +32,41 @@ def send_order_confirmation(order, request=None):
     msg.attach_alternative(html_body, 'text/html')
     msg.send(fail_silently=False)
 
+def send_status_update_email(order, old_status, new_status):
+    """
+    Send the customer an email explaining the status change
+    """
+    recipient = order.user.email
+    if not recipient:
+        return
+
+    subject_map = {
+        'paid': f"Payment recieved for order #{order.pk}",
+        'processing': f"Your order #{order.pk} is being prepared",
+        'shipped': f"Your order #{order.pk} has shipped",
+        'delivered': f"Your order #{order.pk} has been delivered",
+        'cancelled': f"Your order #{order.pk} has been cancelled"
+    }
+
+    subject = subject_map.get(new_status, f"Order {order.pk} update: {new_status}")
+    context = {
+        'order': order,
+        'old_status': old_status,
+        'new_status': new_status,
+        'site_name': 'VoltPC',
+    }
+    text_body = render_to_string('orders/email/status_update.txt', context)
+    html_body = render_to_string('orders/email/status_update.html', context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[recipient]
+    )
+    msg.attach_alternative(html_body, 'text/html')
+    msg.send(fail_silently=False)
+
 def _build_order_url(order, request):
     """
     Return an absolute URL to the order detail page

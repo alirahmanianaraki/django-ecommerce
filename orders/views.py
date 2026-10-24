@@ -8,10 +8,12 @@ from django.contrib.auth.decorators import login_required
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .services import (
-    place_order, 
+    place_order,
+    transition_order, 
     InsufficientStock,
     MissingShippingAddress,
     InvalidCoupon,
+    InvalidStatusTransition,
 )
 from .emails import send_order_confirmation
 
@@ -106,12 +108,38 @@ def order_detail(request, pk):
     order = get_object_or_404(
         Order.objects
         .filter(user=request.user)
-        .prefetch_related('orderitem_set__product__product_images'),
+        .prefetch_related('orderitem_set__product__product_images',
+                          'status_events__changed_by'
+        ),
         pk=pk,
     )
     return render(request, 'orders/order_detail.html',
                   {
                       'order': order
                   })
+
+@require_POST
+@login_required(login_url='users:login')
+def cancel_order(request, pk):
+    """
+    Allow the customer to cacnel their own order, only if it's still cancellable.
+    """
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    if order.is_terminal or not order.can_transition_to(Order.Status.CANCELLED):
+        messages.error(request, 'This order cannot be cancelled at this stage')
+        return redirect('orders:order_detail', pk=pk)
+    try:
+        transition_order(
+            order,
+            Order.Status.CANCELLED,
+            changed_by=request.user,
+            note='Canclled by customer'
+        )
+    except InvalidStatusTransition as exc:
+        messages.error(request, str(exc))
+        return redirect('order:order_detail', pk=pk)
+
+    messages.success(request, f'Order #{order.pk} has been cancelled')
+    return redirect('orders:order_detail', pk=pk)
     
             
