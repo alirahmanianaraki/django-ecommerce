@@ -7,6 +7,77 @@
     <script src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
     <title>{% block title %}VoltPC - Computer Parts Store{% endblock %}</title>
 </head>
+<script>
+(function () {
+    function updateCompareBadge(count) {
+        const badge = document.getElementById('compare-count');
+        if (!badge) return;
+        badge.textContent = count;
+        if (count > 0) {
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function setButtonState(btn, inComparison) {
+        btn.dataset.inComparison = inComparison ? 'true' : 'false';
+
+        // Swap classes
+        if (inComparison) {
+            btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+            btn.classList.add('bg-cyan-50', 'text-cyan-700', 'border-cyan-200');
+        } else {
+            btn.classList.remove('bg-cyan-50', 'text-cyan-700', 'border-cyan-200');
+            btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+        }
+
+        // Swap label text
+        const label = btn.querySelector('.compare-label');
+        if (label) label.textContent = inComparison ? 'In comparison' : 'Compare';
+    }
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.compare-btn');
+        if (!btn) return;
+
+        // Prevent the parent <a> (product card link) from navigating.
+        e.preventDefault();
+        e.stopPropagation();
+
+        const productId = btn.dataset.productId;
+        const inComparison = btn.dataset.inComparison === 'true';
+        const url = inComparison
+            ? '{% url "myapp:comparison_remove" %}'
+            : '{% url "myapp:comparison_add" %}';
+
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+        const token = csrf ? csrf.value : '{{ csrf_token }}';
+        // Fallback: use the cookie if no form exists on this page
+        const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+        const csrfToken = token || (m && m[1]);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: new URLSearchParams({ product_id: productId }),
+        })
+            .then(r => r.json().then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+                if (data.success) {
+                    setButtonState(btn, !inComparison);
+                    updateCompareBadge(data.count);
+                } else {
+                    alert(data.error || 'Something went wrong.');
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'));
+    });
+})();
+</script>
 <body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
     <!-- Top Info Bar -->
     <div class="bg-slate-900 text-slate-300 text-xs">
@@ -140,6 +211,21 @@
                         </div>
                         {% endif %}
                     </div>
+
+                    <a href="{% url 'myapp:comparison' %}"
+   class="relative flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors group">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-400 group-hover:text-cyan-300 transition-colors"
+         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"/>
+    </svg>
+    <span class="hidden sm:inline text-sm font-medium">Compare</span>
+    <span id="compare-count"
+          class="absolute -top-2 -right-2 bg-gradient-to-br from-cyan-400 to-blue-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-cyan-500/40
+                 {% if comparison|length == 0 %}hidden{% endif %}">
+        {{ comparison|length }}
+    </span>
+</a>
 
                     <!-- Cart -->
                     <a href="{% url 'cart:cart_overview' %}" class="relative flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors group">

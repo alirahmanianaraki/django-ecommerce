@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import F, Q
 from django.db.models import Avg, Count
+from orders.models import OrderItem
 from .filters import apply_product_filters
 from .pagination import paginate
 from .feature_filters import build_sidebar_context
@@ -23,7 +24,6 @@ from .models import ( Product,
                      Category,
                      Review,
                      StockAlert)
-from orders.models import OrderItem
 
 # Create your views here.
 def index(request):
@@ -269,4 +269,3 @@ def notify_when_available(request, slug):
 def _is_ajax(request):
     """Return True if the request was made via AJAX"""
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
-    

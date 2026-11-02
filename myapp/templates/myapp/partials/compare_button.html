@@ -1,0 +1,23 @@
+{# Expects: product #}
+<button type="button"
+        class="compare-btn inline-flex items-center justify-center gap-2
+               w-full py-2 px-3 rounded-lg text-sm font-semibold transition-colors
+               {% if product.id in comparison_ids %}
+                   bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100
+               {% else %}
+                   bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700
+               {% endif %}"
+        data-product-id="{{ product.id }}"
+        data-in-comparison="{% if product.id in comparison_ids %}true{% else %}false{% endif %}">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        {% if product.id in comparison_ids %}
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        {% else %}
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        {% endif %}
+    </svg>
+    <span class="compare-label">
+        {% if product.id in comparison_ids %}In comparison{% else %}Compare{% endif %}
+    </span>
+</button>

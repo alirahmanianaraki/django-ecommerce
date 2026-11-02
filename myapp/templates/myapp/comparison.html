@@ -1,0 +1,162 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Compare Products - VoltPC{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div class="max-w-7xl mx-auto px-4 py-10">
+
+        <!-- Header -->
+        <div class="flex items-end justify-between mb-8">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-blue-600">Compare</span>
+                <h1 class="text-4xl font-bold text-slate-800 tracking-tight mt-1">Product comparison</h1>
+                <p class="text-slate-500 text-sm mt-1">
+                    {% if table.products %}
+                        {{ table.products|length }} of {{ comparison_max }} slot{{ comparison_max|pluralize }} used.
+                    {% else %}
+                        Add up to {{ comparison_max }} products to compare side-by-side.
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{% url 'myapp:index' %}"
+               class="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Continue Shopping
+            </a>
+        </div>
+
+        {% if table.products %}
+
+        <!-- Table Container -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/50 border-b border-slate-200">
+                            <!-- Sticky Attribute Column -->
+                            <th class="sticky left-0 z-10 bg-slate-50/95 backdrop-blur text-left font-semibold text-xs uppercase tracking-wider text-slate-500 px-6 py-4 w-48 border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+                                Attribute
+                            </th>
+                            
+                            {% for product in table.products %}
+                            <th class="px-6 py-4 min-w-[240px] max-w-[300px] align-top border-r border-slate-100 last:border-r-0">
+                                <div class="flex flex-col items-center text-center gap-3">
+                                    
+                                    <!-- Product Image (Fixed Size) -->
+                                    <a href="{{ product.get_absolute_url }}" class="block group">
+                                        <div class="w-32 h-32 bg-slate-100 rounded-xl overflow-hidden mb-3 border border-slate-200 group-hover:border-blue-300 transition-colors">
+                                            {% with first=product.product_images.first %}
+                                                {% if first %}
+                                                    <img src="{{ first.image.url }}"
+                                                         alt="{{ product.title }}"
+                                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                                {% else %}
+                                                    <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                        </svg>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        
+                                        <!-- Title -->
+                                        <p class="font-bold text-slate-800 text-base leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                            {{ product.title }}
+                                        </p>
+                                    </a>
+
+                                    <!-- Price -->
+                                    <p class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent whitespace-nowrap">
+                                        {% if product.has_discount %}
+                                            <span class="text-sm text-slate-400 line-through mr-2">${{ product.price }}</span>
+                                            ${{ product.discount_price }}
+                                        {% else %}
+                                            ${{ product.price }}
+                                        {% endif %}
+                                    </p>
+
+                                    <!-- Remove Button -->
+                                    <button type="button"
+                                            class="compare-btn inline-flex items-center justify-center gap-1.5
+                                                   py-1.5 px-4 rounded-lg text-xs font-medium
+                                                   bg-white text-red-500 border border-red-200
+                                                   hover:bg-red-500 hover:text-white hover:border-red-500
+                                                   transition-all duration-200 shadow-sm"
+                                            data-product-id="{{ product.id }}"
+                                            data-in-comparison="true">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <span class="compare-label">Remove</span>
+                                    </button>
+                                </div>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% if not table.rows %}
+                        <tr>
+                            <td colspan="{{ table.products|length|add:1 }}"
+                                class="px-6 py-12 text-center text-slate-500 bg-white/50">
+                                These products have no specifications to compare.
+                            </td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% for row in table.rows %}
+                        <tr class="{% if not row.all_same %}bg-blue-50/30{% endif %} hover:bg-slate-50/50 transition-colors">
+                            <!-- Sticky Attribute Name -->
+                            <td class="sticky left-0 z-10 bg-white/95 backdrop-blur px-6 py-4 align-middle border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+                                <span class="text-xs font-bold uppercase tracking-wide text-slate-600">
+                                    {{ row.feature.name }}
+                                </span>
+                            </td>
+                            
+                            {% for cell in row.cells %}
+                            <td class="px-6 py-4 align-middle text-slate-700 border-r border-slate-100 last:border-r-0">
+                                {% if cell.value %}
+                                    <span class="font-medium">{{ cell.value }}</span>
+                                {% else %}
+                                    <span class="text-slate-300 italic text-xs">Not specified</span>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty state -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-16 text-center max-w-lg mx-auto">
+            <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-6">
+                <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Nothing to compare yet</h2>
+            <p class="text-slate-500 mb-8">
+                Browse products and click "Compare" on up to {{ comparison_max }} of them to see them side by side.
+            </p>
+            <a href="{% url 'myapp:index' %}"
+               class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Browse Products
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
