@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -7,77 +8,6 @@
     <script src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
     <title>{% block title %}VoltPC - Computer Parts Store{% endblock %}</title>
 </head>
-<script>
-(function () {
-    function updateCompareBadge(count) {
-        const badge = document.getElementById('compare-count');
-        if (!badge) return;
-        badge.textContent = count;
-        if (count > 0) {
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
-    }
-
-    function setButtonState(btn, inComparison) {
-        btn.dataset.inComparison = inComparison ? 'true' : 'false';
-
-        // Swap classes
-        if (inComparison) {
-            btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
-            btn.classList.add('bg-cyan-50', 'text-cyan-700', 'border-cyan-200');
-        } else {
-            btn.classList.remove('bg-cyan-50', 'text-cyan-700', 'border-cyan-200');
-            btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
-        }
-
-        // Swap label text
-        const label = btn.querySelector('.compare-label');
-        if (label) label.textContent = inComparison ? 'In comparison' : 'Compare';
-    }
-
-    document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.compare-btn');
-        if (!btn) return;
-
-        // Prevent the parent <a> (product card link) from navigating.
-        e.preventDefault();
-        e.stopPropagation();
-
-        const productId = btn.dataset.productId;
-        const inComparison = btn.dataset.inComparison === 'true';
-        const url = inComparison
-            ? '{% url "myapp:comparison_remove" %}'
-            : '{% url "myapp:comparison_add" %}';
-
-        const csrf = document.querySelector('[name=csrfmiddlewaretoken]');
-        const token = csrf ? csrf.value : '{{ csrf_token }}';
-        // Fallback: use the cookie if no form exists on this page
-        const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
-        const csrfToken = token || (m && m[1]);
-
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: new URLSearchParams({ product_id: productId }),
-        })
-            .then(r => r.json().then(data => ({ ok: r.ok, data })))
-            .then(({ ok, data }) => {
-                if (data.success) {
-                    setButtonState(btn, !inComparison);
-                    updateCompareBadge(data.count);
-                } else {
-                    alert(data.error || 'Something went wrong.');
-                }
-            })
-            .catch(() => alert('Network error. Please try again.'));
-    });
-})();
-</script>
 <body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
     <!-- Top Info Bar -->
     <div class="bg-slate-900 text-slate-300 text-xs">
@@ -344,5 +274,6 @@
             </div>
         </div>
     </footer>
+    <script src="{% static 'myapp/js/comparison.js' %}"></script>
 </body>
 </html>

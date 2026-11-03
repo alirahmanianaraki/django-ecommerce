@@ -8,7 +8,9 @@
                    bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700
                {% endif %}"
         data-product-id="{{ product.id }}"
-        data-in-comparison="{% if product.id in comparison_ids %}true{% else %}false{% endif %}">
+        data-in-comparison="{% if product.id in comparison_ids %}true{% else %}false{% endif %}"
+        data-add-url="{% url 'myapp:comparison_add' %}"
+        data-remove-url="{% url 'myapp:comparison_remove' %}">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
         {% if product.id in comparison_ids %}
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
