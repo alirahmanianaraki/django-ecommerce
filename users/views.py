@@ -73,13 +73,20 @@ def user_login(request):
     if request.method == 'POST':
         login_form = LoginForm(request, data=request.POST)
         if login_form.is_valid():
+            # Capture pre-login state BEFORE login() cycles the session.
             cart_data = request.session.get('cart', {})
+            recently_viewed_data = request.session.get(
+                'recently_viewed', []
+            )
+            comparison_data = request.session.get('comparison', [])
             username = login_form.cleaned_data.get('username')
             password = login_form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
                 request.session['cart'] = cart_data
+                request.session['recently_viewed'] = recently_viewed_data
+                request.session['comparison'] = comparison_data
                 request.session.modified = True
                 messages.success(request, 'You have successfully logged in')
                 return redirect('myapp:index')
@@ -91,16 +98,24 @@ def user_login(request):
                   })
 
 def user_logout(request):
-    cart_data = request.session.get('cart', {})
     if not request.user.is_authenticated:
         messages.error(request, 'You are not logged in')
         return redirect('myapp:index')
-    else:
-        logout(request)
-        request.session['cart'] = cart_data
-        request.session.modified = True
-        messages.success(request, 'You have successfully logged out')
-        return redirect('myapp:index')
+
+    # Capture before logout() cycles the session.
+    cart_data = request.session.get('cart', {})
+    recently_viewed_data = request.session.get('recently_viewed', [])
+    comparison_data = request.session.get('comparison', [])
+
+    logout(request)
+
+    request.session['cart'] = cart_data
+    request.session['recently_viewed'] = recently_viewed_data
+    request.session['comparison'] = comparison_data
+    request.session.modified = True
+
+    messages.success(request, 'You have successfully logged out')
+    return redirect('myapp:index')
 
 @login_required(login_url='users:login')
 def profile(request):

@@ -19,6 +19,7 @@ from .pagination import paginate
 from .feature_filters import build_sidebar_context
 from .forms import ReviewForm, StockAlerForm
 from .recommendations import get_related_products
+from .recently_viewed import RecentlyViewed
 from .models import ( Product, 
                      Tag, 
                      Category,
@@ -50,6 +51,9 @@ def detail(request, slug):
             .with_specs(),
         slug=slug
         )
+    # Recored the view
+    RecentlyViewed(request).add(product.pk)
+    #
     review_form = ReviewForm()
     existing_review = None
     can_review = False

@@ -76,6 +76,7 @@ TEMPLATES = [
                 'cart.context_processor.cart',
                 'myapp.context_processors.top_categories',
                 'myapp.context_processors.comparison',
+                'myapp.context_processors.recently_viewed',
             ],
         },
     },

@@ -464,6 +464,10 @@
         </div>
     </div>
     {% endif %}
+
+    {# NEW: Recently Viewed Products #}
+    {% include 'myapp/partials/recently_viewed.html' with exclude_product_id=product.id %}
+
 </div>
 
 <!-- Toast Notification Container -->
