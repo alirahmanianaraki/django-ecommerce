@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, webhooks
 
 app_name = 'orders'
 
@@ -11,4 +11,7 @@ urlpatterns = [
     path('my-orders/', views.order_list, name='order_list'),
     path('my-orders/<int:pk>/', views.order_detail, name='order_detail'),
     path('my-orders/<int:pk>/cancel/', views.cancel_order, name='cancel_order'),
+    path('stripe-success/', views.stripe_success, name='stripe_success'),
+    path('stripe-cancel/', views.stripe_cancel, name='stripe_cancel'),
+    path('stripe-webhook/', webhooks.stripe_webhook, name='stripe_webhook'),
 ]

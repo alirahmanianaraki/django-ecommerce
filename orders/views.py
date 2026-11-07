@@ -1,9 +1,11 @@
+import stripe
+import logging
+from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from users.models import Address
-import logging
 from django.contrib.auth.decorators import login_required
 from cart.cart import Cart
 from .models import Order, OrderItem
@@ -14,6 +16,7 @@ from .services import (
     MissingShippingAddress,
     InvalidCoupon,
     InvalidStatusTransition,
+    create_stripe_checkout_session
 )
 from .emails import send_order_confirmation
 
@@ -76,11 +79,24 @@ def place_order_view(request):
         }, status=400)
 
     try:
-        send_order_confirmation(order, request=request)
-    except Exception as exc:
-        logger.exception('Order confirmation email failed for order #%s', order.pk)
+        session = create_stripe_checkout_session(order, request)
+    except Exception:
+        logger.exception(f"Stripe checkout session creation failed for order {order.pk}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Could not initialize payment. Please try again',
+        }, status=500)
+
+    # try:
+    #     send_order_confirmation(order, request=request)
+    # except Exception as exc:
+    #     logger.exception('Order confirmation email failed for order #%s', order.pk)
         
-    return JsonResponse({'success': True})
+    return JsonResponse({
+        'success': True,
+        'checkout_url': session.url,
+        'order_id': order.pk
+    })
 
 def order_success(request):
     return render(request, 'orders/order_success.html')
@@ -141,5 +157,20 @@ def cancel_order(request, pk):
 
     messages.success(request, f'Order #{order.pk} has been cancelled')
     return redirect('orders:order_detail', pk=pk)
-    
-            
+
+def stripe_success(request):
+    """
+    Stripe redirects the customer here after a successful payment.
+    """
+    session_id = request.GET.get('session_id', '')
+    order = Order.objects.filter(stripe_session_id=session_id).first()
+    return render(request, 'orders/stripe_success.html',
+                  {
+                      'order': order
+                  })
+
+def stripe_cancel(request):
+    """
+    Customer cancelled on Stripe's page, the order is still pending
+    """
+    return render(request, 'orders/stripe_cancel.html')

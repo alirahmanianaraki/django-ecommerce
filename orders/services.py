@@ -1,9 +1,14 @@
+import stripe
+from django.conf import settings
+from django.urls import reverse
 from django.db import transaction
 from django.db.models import F
 from decimal import Decimal
 from django.utils import timezone
 from myapp.models import Product, Coupon
 from .models import Order, OrderItem, OrderStatusEvent
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # Exceptions
 class InsufficientStock(Exception):
@@ -232,3 +237,56 @@ def override_order_status(order, new_status, changed_by=None, note='', tracking_
     return _apply_status_change(
         order, new_status, changed_by, prefixed_note, tracking_number
     )
+
+def create_stripe_checkout_session(order, request):
+    """
+    Create a Stripe checkout session for an existing order
+    """
+    line_items = []
+    for item in order.orderitem_set.all():
+        line_items.append({
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {
+                    'name': item.product.title,
+                },
+                'unit_amount': int(item.unit_price * 100),
+            },
+            'quantity': item.quantity,
+        })
+
+    success_url = request.build_absolute_uri(
+        reverse('orders:stripe_success')
+    ) + '?session_id={CHECKOUT_SESSION_ID}'
+    cancel_url = request.build_absolute_uri(
+        reverse('orders:stripe_cancel')
+    )
+
+    discounts = []
+    if order.coupon_code and order.discount_amount > 0:
+        stripe_coupon = stripe.Coupon.create(
+            amount_off=int(order.discount_amount * 100),
+            currency='usd',
+            duration='once',
+            name=f"Discount {order.coupon_code}",
+        )
+        discounts = [{'coupon': stripe_coupon.id}]
+
+        # Create the session
+    checkout_session = stripe.checkout.Session.create(
+        line_items=line_items,
+        mode='payment',
+        success_url=success_url,
+        cancel_url=cancel_url,
+        client_reference_id=str(order.pk),
+        metadata={
+            'order_id': order.pk
+        },
+        discounts=discounts or None
+    )
+
+    # Save the session id to the order
+    order.stripe_session_id = checkout_session.id
+    order.save(update_fields=['stripe_session_id'])
+
+    return checkout_session

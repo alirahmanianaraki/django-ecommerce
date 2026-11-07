@@ -227,7 +227,12 @@
             url: $form.attr('action'),
             data: $form.serialize(),
             success: function(json) {
-                window.location.replace("{% url 'orders:order_success' %}");
+                if (json.success && json.checkout_url) {
+                    // Redirect the browser to Stripe's hosted checkout page
+                    window.location.href = json.checkout_url;
+                } else {
+                    window.location.replace("{% url 'orders:order_failed' %}");
+                }
             },
             error: function(xhr) {
                 const data = xhr.responseJSON || {};
