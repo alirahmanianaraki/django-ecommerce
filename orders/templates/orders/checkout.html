@@ -227,7 +227,15 @@
             url: $form.attr('action'),
             data: $form.serialize(),
             success: function(json) {
-                window.location.replace("{% url 'orders:order_success' %}");
+                // The order exists now (status "pending"). Hand over to Stripe:
+                // POST to our pay endpoint, which redirects the browser to Stripe's page.
+                const $payForm = $('<form>', { method: 'POST', action: json.payment_url });
+                $payForm.append($('<input>', {
+                    type: 'hidden',
+                    name: 'csrfmiddlewaretoken',
+                    value: '{{ csrf_token }}'
+                }));
+                $payForm.appendTo('body')[0].submit();
             },
             error: function(xhr) {
                 const data = xhr.responseJSON || {};

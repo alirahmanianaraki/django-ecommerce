@@ -48,6 +48,16 @@ class Order(models.Model):
     )
     status_updated_at = models.DateTimeField(null=True, blank=True)
     tracking_number = models.CharField(max_length=100, blank=True)
+    stripe_checkout_session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        db_index=True,
+    )
+    stripe_payment_intent_id = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+    paid_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Order #{self.pk} - {self.user}"

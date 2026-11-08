@@ -2,10 +2,16 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
+from django.db import transaction
+from django.urls import reverse
 from users.models import Address
 import logging
 from django.contrib.auth.decorators import login_required
 from cart.cart import Cart
+from payments.services import (
+    expire_checkout_session,
+    PaymentError
+)
 from .models import Order, OrderItem
 from .services import (
     place_order,
@@ -75,12 +81,16 @@ def place_order_view(request):
             'redirect': 'cart',
         }, status=400)
 
-    try:
-        send_order_confirmation(order, request=request)
-    except Exception as exc:
-        logger.exception('Order confirmation email failed for order #%s', order.pk)
+    # try:
+    #     send_order_confirmation(order, request=request)
+    # except Exception as exc:
+    #     logger.exception('Order confirmation email failed for order #%s', order.pk)
         
-    return JsonResponse({'success': True})
+    return JsonResponse({
+        'success': True,
+        'order_id': order.pk,
+        'payment_url': reverse('payments:pay', kwargs={'pk': order.pk})
+    })
 
 def order_success(request):
     return render(request, 'orders/order_success.html')
@@ -122,24 +132,27 @@ def order_detail(request, pk):
 @login_required(login_url='users:login')
 def cancel_order(request, pk):
     """
-    Allow the customer to cacnel their own order, only if it's still cancellable.
+    Customers may cancel only UNPAID orders. Cancelling a paid order needs a refund.
     """
-    order = get_object_or_404(Order, pk=pk, user=request.user)
-    if order.is_terminal or not order.can_transition_to(Order.Status.CANCELLED):
-        messages.error(request, 'This order cannot be cancelled at this stage')
-        return redirect('orders:order_detail', pk=pk)
-    try:
-        transition_order(
-            order,
-            Order.Status.CANCELLED,
-            changed_by=request.user,
-            note='Canclled by customer'
+    with transaction.atomic():
+        order = get_object_or_404(
+            Order.objects.select_for_update(), pk=pk, user=request.user
         )
-    except InvalidStatusTransition as exc:
-        messages.error(request, str(exc))
-        return redirect('order:order_detail', pk=pk)
+        if order.status != Order.Status.PENDING:
+            messages.error(request, 'Only unpaid orders can be cancelled online')
+            return redirect('orders:order_detail', pk=pk)
 
-    messages.success(request, f'Order #{order.pk} has been cancelled')
+        try:
+            expire_checkout_session(order)
+            transition_order(
+                order, Order.Status.CANCELLED,
+                changed_by=request.user, note='Cancelled by customer'
+            )
+        except (PaymentError, InvalidStatusTransition) as exc:
+            messages.error(request, str(exc))
+            return redirect('orders:order_detail', pk=pk)
+
+    messages.success(request, f"Order #{order.pk} has been cancelled")
     return redirect('orders:order_detail', pk=pk)
     
             

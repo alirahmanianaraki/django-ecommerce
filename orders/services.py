@@ -89,7 +89,7 @@ def place_order(user, cart, address):
             if locked_coupon.one_per_user:
                 if Order.objects.filter(
                     user=user, coupon_code=locked_coupon.code
-                ).exists():
+                ).exclude(status=Order.Status.CANCELLED).exists():
                     raise InvalidCoupon('You have already used this coupon')
 
             discount_amount = locked_coupon.calculate_discount(subtotal)
@@ -166,6 +166,10 @@ def _apply_status_change(order, new_status, changed_by, note, tracking_number):
                 Product.objects.filter(pk=item.product_id).update(
                     stock=F('stock') + item.quantity
                 )
+            if order.coupon_code:
+                Coupon.objects.filter(
+                    code=order.coupon_code, used_count__gt=0
+                ).update(used_count=F('used_count') - 1)
 
         event = OrderStatusEvent.objects.create(
             order=order,

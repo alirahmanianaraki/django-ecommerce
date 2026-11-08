@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'orders.apps.OrdersConfig',
     'wishlists.apps.WishlistsConfig',
+    'payments.apps.PaymentsConfig',
     'django_extensions',
     'django.contrib.postgres', # Enables PostgreSQL-specific features
     "django.contrib.admin",
@@ -180,3 +181,8 @@ SITE_URL = os.getenv('SITE_URL', '')
 
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
+
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_CURRENCY = os.getenv('STRIPE_CURRENCY', 'usd')
+STRIPE_CHECKOUT_EXPIRES_MINUTES = 35

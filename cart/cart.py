@@ -85,7 +85,7 @@ class Cart():
             already_used = Order.objects.filter(
                 user=user,
                 coupon_code=coupon.code,
-            ).exists()
+            ).exclude(status=Order.Status.CANCELLED).exists()
             if already_used:
                 raise ValidationError('You have already used this coupon')
 

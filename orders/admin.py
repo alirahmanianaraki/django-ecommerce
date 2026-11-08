@@ -18,7 +18,8 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ['pk', 'user', 'status', 'total_amount', 'is_paied', 'created_at']
     list_filter = ['status', 'is_paied', 'status_updated_at']
     search_fields = ['user__username', 'user__email', 'tracking_number']
-    readonly_fields = ['status', 'created_at', 'status_updated_at', 'override_link']
+    readonly_fields = ['status', 'created_at', 'status_updated_at', 'override_link',
+                       'stripe_checkout_session_id', 'stripe_payment_intent_id', 'paid_at']
 
     actions = [
         'mark_paid',
