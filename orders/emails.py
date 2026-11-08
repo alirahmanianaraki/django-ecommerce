@@ -74,4 +74,5 @@ def _build_order_url(order, request):
     path = reverse("orders:order_detail", kwargs={'pk': order.pk})
     if request is not None:
         return request.build_absolute_uri(path)
-    return path
+    site_url = getattr(settings, 'SITE_URL', '').rstrip('/')
+    return f"{site_url}{path}"

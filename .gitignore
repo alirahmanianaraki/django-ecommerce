@@ -18,6 +18,7 @@ db.sqlite3
 db.sqlite3-journal
 db copy.sqlite3
 db_data.json
+*.sql
 
 # Media uploaded by users
 media/

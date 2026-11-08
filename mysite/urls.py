@@ -33,6 +33,7 @@ urlpatterns = [
     path('users/', include('users.urls'), name='users'),
     path('orders/', include('orders.urls'), name='orders'),
     path('wishlists/', include('wishlists.urls'), name='wishlists'),
+    path('payments/', include('payments.urls'), name='payments'),
     path("admin/", admin.site.urls),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

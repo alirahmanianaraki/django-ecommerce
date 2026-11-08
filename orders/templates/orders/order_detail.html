@@ -305,7 +305,19 @@
                       transition-all duration-300">
                 Continue Shopping
             </a>
-                            {% if order.is_cancellable %}
+            
+            {% if order.status == 'pending' %}
+            <form method="POST" action="{% url 'payments:pay' order.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
+                               bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors">
+                    Pay now
+                </button>
+            </form>
+            {% endif %}
+
+            {% if order.status == 'pending' %}
         <div class="mt-6 flex justify-end">
             <form method="POST" action="{% url 'orders:cancel_order' order.pk %}"
                   onsubmit="return confirm('Cancel this order? This cannot be undone.');">
