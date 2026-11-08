@@ -1,6 +1,4 @@
-import stripe
 import logging
-from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -22,9 +20,7 @@ from .services import (
     MissingShippingAddress,
     InvalidCoupon,
     InvalidStatusTransition,
-    create_stripe_checkout_session
 )
-from .emails import send_order_confirmation
 
 logger = logging.getLogger(__name__)
 
@@ -158,18 +154,7 @@ def cancel_order(request, pk):
     messages.success(request, f"Order #{order.pk} has been cancelled")
     return redirect('orders:order_detail', pk=pk)
 
-def stripe_success(request):
-    """
-    Stripe redirects the customer here after a successful payment.
-    """
-    session_id = request.GET.get('session_id', '')
-    order = Order.objects.filter(stripe_session_id=session_id).first()
-    return render(request, 'orders/stripe_success.html',
-                  {
-                      'order': order
-                  })
 
-def stripe_cancel(request):
     """
     Customer cancelled on Stripe's page, the order is still pending
     """

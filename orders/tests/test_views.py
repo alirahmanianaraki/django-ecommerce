@@ -94,7 +94,8 @@ class OrderViewTests(TestCase):
         response = self.client.post(reverse("orders:place_order"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"success": True})
+        self.assertTrue(response.json()["success"])
+        self.assertIn("/payments/orders/", response.json()["payment_url"])
 
         order = Order.objects.get(user=self.user)
         self.assertEqual(order.total_amount, Decimal("500.00"))
