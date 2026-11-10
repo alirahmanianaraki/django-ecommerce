@@ -1,9 +1,12 @@
+import logging
 from django.db import transaction
 from django.db.models import F
 from decimal import Decimal
 from django.utils import timezone
 from myapp.models import Product, Coupon
 from .models import Order, OrderItem, OrderStatusEvent
+
+logger = logging.getLogger(__name__)
 
 # Exceptions
 class InsufficientStock(Exception):
@@ -181,58 +184,58 @@ def _apply_status_change(order, new_status, changed_by, note, tracking_number):
             note=note.strip()
         )
 
-    try:
-        from .emails import send_status_update_email
-        send_status_update_email(order, old_status, new_status)
-    except Exception:
-        import logging
-        logging.getLogger(__name__).exception(
-            'Status update email failed for order #%s', order.pk
-        )
+    def _notify():
+        try:
+            from .emails import send_status_update_email
+            send_status_update_email(order, old_status, new_status)
+        except Exception:
+            logger.exception(f"Status update email failed for order {order.pk}")
 
+    transaction.on_commit(_notify)
     return event
+
+def _lock_and_refresh(order):
+    """
+    Lock this order's database row, then reload its status
+    """
+    Order.objects.select_for_update().only('pk').get(pk=order.pk)
+    order.refresh_from_db(fields=['status'])
 
 def transition_order(order, new_status, changed_by=None, note='', tracking_number=''):
     """
-    STRICT transition. Enforces the state machine in Order.ALLOWED_TRASITIONS
+    STRICT transition. Enforces the state machine Order.ALLOWED_TRANSITIONS
     """
-    if new_status == order.status:
-        return None
+    with transaction.atomic():
+        _lock_and_refresh(order)
+        if new_status == order.status:
+            return None
+        if not order.can_transition_to(new_status):
+            raise InvalidStatusTransition(
+                f"Cannot move order #{order.pk} from '{order.status}' to '{new_status}'"
+            )
+        if new_status == Order.Status.SHIPPED and not tracking_number.strip():
+            raise TrackingNumberRequired(
+                'A tracking number is required to mark an order as shipped'
+            )
+        return _apply_status_change(order, new_status, changed_by, note, tracking_number)
 
-    if not order.can_transition_to(new_status):
-        raise InvalidStatusTransition(
-            f"Cannot move order #{order.pk} from '{order.status}' to '{new_status}'"
-        )
+def override_order_status(order, new_status, changed_by=None, note='', tracking_number=''):
+    """
+    LOOSE transition: skips the state-machine check so an admin can force any status.
+    """
+    if not note or not note.strip():
+        raise ValueError('A note explaining the override is required')
+    if new_status not in {choice[0] for choice in Order.Status.choices}:
+        raise ValueError(f"'{new_status} is not a valid status'")
     if new_status == Order.Status.SHIPPED and not tracking_number.strip():
         raise TrackingNumberRequired(
             'A tracking number is required to mark an order as shipped'
         )
 
-    return _apply_status_change(
-        order, new_status, changed_by, note, tracking_number
-    )
-
-def override_order_status(order, new_status, changed_by=None, note='', tracking_number=''):
-    """
-    LOOSE transition. Skips the state-machine check so an admin can force any status.
-    Requires and explicit 'note' explaining why.
-    """
-    if not note or not note.strip():
-        raise ValueError(
-            'A note explaining the override is required'
+    with transaction.atomic():
+        _lock_and_refresh(order)
+        if new_status == order.status:
+            return None
+        return _apply_status_change(
+            order, new_status, changed_by, f"Manual override: {note.strip()}", tracking_number
         )
-    if new_status not in {choice[0] for choice in Order.Status.choices}:
-        raise ValueError(f"'{new_status}' is not a valid status")
-    if new_status == order.status:
-        return None
-
-    if new_status == Order.Status.SHIPPED and not tracking_number.strip():
-        raise TrackingNumberRequired(
-            'A tracking nnumber is required to mark an order as shipped'
-        )
-
-    prefixed_note = f"Manual override: {note.strip()}"
-
-    return _apply_status_change(
-        order, new_status, changed_by, prefixed_note, tracking_number
-    )

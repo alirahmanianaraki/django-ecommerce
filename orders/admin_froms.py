@@ -12,7 +12,7 @@ class OverrideStatusForm(forms.Form):
         help_text='Only used when moving to shipped status'
     )
 
-    def clear(self):
+    def clean(self):
         cleaned = super().clean()
         new_status = cleaned.get('new_status')
         tracking_number = (cleaned.get('tracking_number')or '').strip()

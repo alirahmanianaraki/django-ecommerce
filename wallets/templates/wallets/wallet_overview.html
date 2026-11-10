@@ -1,0 +1,53 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}My Wallet - VoltPC{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div class="max-w-4xl mx-auto px-4 py-10">
+
+        <div class="mb-8">
+            <span class="text-xs font-semibold uppercase tracking-wider text-blue-600">Account</span>
+            <h1 class="text-4xl font-bold text-slate-800 tracking-tight mt-1">My Wallet</h1>
+        </div>
+
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/30 mb-8">
+            <p class="text-sm opacity-80">Available balance</p>
+            <p class="text-4xl font-bold mt-1">${{ balance }}</p>
+        </div>
+
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">History</h2>
+
+        {% if page_obj %}
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+            {% for txn in page_obj %}
+            <div class="flex items-center justify-between gap-4 px-6 py-4 {% if not forloop.last %}border-b border-slate-100{% endif %}">
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-slate-800">{{ txn.get_kind_display }}</p>
+                    <p class="text-xs text-slate-500 truncate">
+                        {{ txn.note }}
+                        {% if txn.order_id %}
+                            · <a href="{% url 'orders:order_detail' txn.order_id %}" class="text-blue-600 hover:underline">Order #{{ txn.order_id }}</a>
+                        {% endif %}
+                    </p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">{{ txn.created_at|date:"M j, Y, g:i a" }}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-sm font-bold {% if txn.amount > 0 %}text-emerald-600{% else %}text-slate-800{% endif %}">
+                        {% if txn.amount > 0 %}+${{ txn.amount }}{% else %}-${{ txn.amount|cut:"-" }}{% endif %}
+                    </p>
+                    <p class="text-[11px] text-slate-400">Balance ${{ txn.balance_after }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% include 'myapp/partials/pagination.html' %}
+        {% else %}
+        <div class="bg-white/80 rounded-2xl border border-white/60 shadow-sm p-12 text-center">
+            <p class="text-slate-600 font-medium">No wallet activity yet</p>
+            <p class="text-slate-400 text-sm mt-1">Refunds and wallet payments will show up here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

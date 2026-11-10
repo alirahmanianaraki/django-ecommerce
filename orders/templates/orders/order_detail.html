@@ -88,7 +88,10 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-slate-800">Cancelled</p>
-                        <p class="text-xs text-slate-600">This order was cancelled.</p>
+                        <p class="text-xs text-slate-600">
+                            This order was cancelled.
+                            {% if order.refunded_amount > 0 %}<br>${{ order.refunded_amount }} was refunded to your wallet.{% endif %}
+                        </p>
                     </div>
                 </div>
             {% else %}
@@ -317,10 +320,21 @@
             </form>
             {% endif %}
 
-            {% if order.status == 'pending' %}
+            {% if order.status == 'pending' and wallet_balance >= order.total_amount %}
+            <form method="POST" action="{% url 'payments:pay_with_wallet' order.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
+                               bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors">
+                    Pay with wallet (${{ wallet_balance }})
+                </button>
+            </form>
+            {% endif %}
+
+            {% if order.is_customer_cancellable %}
         <div class="mt-6 flex justify-end">
             <form method="POST" action="{% url 'orders:cancel_order' order.pk %}"
-                  onsubmit="return confirm('Cancel this order? This cannot be undone.');">
+                  onsubmit="return confirm('Cancel this order? If you already paid, the money goes back to your wallet.');">
                 {% csrf_token %}
                 <button type="submit"
                         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg

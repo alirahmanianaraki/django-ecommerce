@@ -8,10 +8,10 @@ Your order #{{ order.pk }} has changed status from
 "{{ old_status }}" to "{{ new_status }}".
 
 {% if new_status == 'shipped' and order.tracking_number %}Tracking number: {{ order.tracking_number }}
-{% endif %}{% if new_status == 'cancelled' %}No charge will be made on your card. If you were already charged, a refund
-will be issued within a few business days.
+{% endif %}{% if new_status == 'cancelled' %}If you had already paid, the amount has been credited to your VoltPC wallet
+(Account > Wallet).
 {% endif %}
-View your order: {{ site_name }}/orders/my-orders/{{ order.pk }}/
+View your order: {{ site_url }}/orders/my-orders/{{ order.pk }}/
 
 — The {{ site_name }} team
 {% endautoescape %}

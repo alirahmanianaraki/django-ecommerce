@@ -3,6 +3,9 @@ from django.urls import path
 from django.contrib.admin import helpers
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import admin, messages
+from payments.models import Refund
+from payments.refunds import RefundError, cancel_order_and_refund, refund_order_to_wallet
+from payments.services import PaymentError
 from .admin_froms import OverrideStatusForm
 from .services import override_order_status, TrackingNumberRequired
 from .models import Order, OrderItem, OrderStatusEvent
@@ -12,20 +15,32 @@ from .services import (
     TrackingNumberRequired
 )
 # Register your models here.
+class RefundInline(admin.TabularInline):
+    model = Refund
+    extra = 0
+    can_delete = False
+    fields = ['created_at', 'amount', 'destination', 'reason', 'note', 'created_by']
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['pk', 'user', 'status', 'total_amount', 'is_paied', 'created_at']
     list_filter = ['status', 'is_paied', 'status_updated_at']
     search_fields = ['user__username', 'user__email', 'tracking_number']
-    readonly_fields = ['status', 'created_at', 'status_updated_at', 'override_link',
+    readonly_fields = ['status', 'created_at', 'refunded_amount', 'status_updated_at', 'override_link',
                        'stripe_checkout_session_id', 'stripe_payment_intent_id', 'paid_at']
+    inlines = [RefundInline]
 
     actions = [
         'mark_paid',
         'mark_processing',
         'mark_shipped',
-        'mark_delivered'
+        'mark_delivered',
+        'cancel_and_refund',
+        'refund_remaining',
     ]
 
     def override_link(self, obj):
@@ -147,6 +162,42 @@ class OrderAdmin(admin.ModelAdmin):
     def mark_delivered(self, request, queryset):
         self._transition_bulk(request, queryset, Order.Status.DELIVERED)
 
+    @admin.action(description='Cancel and refund to customer wallet (for not shipped yet)')
+    def cancel_and_refund(self, request, queryset):
+        ok = 0
+        for order in queryset:
+            try:
+                cancel_order_and_refund(
+                    order.pk, actor=request.user, staff=True,
+                    reason=Refund.Reason.ADMIN,
+                    note=f"Cancelled by staff ({request.user.username})"
+                )
+                ok += 1
+            except (RefundError, PaymentError, InvalidStatusTransition) as exc:
+                self.message_user(request, f"Order #{order.pk}: {exc}", level=messages.WARNING)
+        if ok:
+            self.message_user(request, f"{ok} order(s) cancelled", level=messages.SUCCESS)
+
+    @admin.action(description='Refund remaining amount to customer wallet (for delivered and compensation)')
+    def refund_remaining(self, request, queryset):
+        ok = 0
+        for order in queryset:
+            try:
+                refund = refund_order_to_wallet(
+                    order.pk, reason=Refund.Reason.ADMIN,
+                    note=f"Refunded by staff ({request.user.username})",
+                    created_by=request.user
+                )
+            except RefundError as exc:
+                self.message_user(request, f"Order #{order.pk}: {exc}", level=messages.WARNING)
+                continue
+            if refund is None:
+                self.message_user(request, f"Order #{order.pk}: nothing left to refund", level=messages.INFO)
+            else:
+                ok += 1
+        if ok:
+            self.message_user(request, f"{ok} refund(s) issued", level=messages.SUCCESS)
+        
 @admin.register(OrderStatusEvent)
 class OrderStatusEventAdmin(admin.ModelAdmin):
     list_display = ['order', 'from_status', 'to_status', 'changed_at', 'changed_by']

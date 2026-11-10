@@ -80,3 +80,9 @@ class OrderStatusTests(TestCase):
         transition_order(self.order, Order.Status.CANCELLED)
         product.refresh_from_db()
         self.assertEqual(product.stock, 10)
+
+    def test_stale_copy_cannot_overwrite_a_cancellation(self):
+        stale = Order.objects.get(pk=self.order.pk)          # a copy that still says "pending"
+        transition_order(self.order, Order.Status.CANCELLED)  # meanwhile: cancelled for real
+        with self.assertRaises(InvalidStatusTransition):
+            transition_order(stale, Order.Status.PAID)        # must NOT resurrect the order

@@ -1,8 +1,22 @@
+import logging
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import strip_tags
+
+logger = logging.getLogger(__name__)
+
+def send_order_confirmation_safely(order_pk):
+    """
+    Used with transaction.on_commit: sends the confirmation, never raises
+    """
+    from .models import Order
+    try:
+        order = Order.objects.select_related('user').get(pk=order_pk)
+        send_order_confirmation(order)
+    except Exception:
+        logger.exception(f"Order confirmation email failed for order {order.pk}")
 
 def send_order_confirmation(order, request=None):
     """
@@ -54,6 +68,7 @@ def send_status_update_email(order, old_status, new_status):
         'old_status': old_status,
         'new_status': new_status,
         'site_name': 'VoltPC',
+        'site_url': getattr(settings, 'SITE_URL', '').rstrip('/'),
     }
     text_body = render_to_string('orders/email/status_update.txt', context)
     html_body = render_to_string('orders/email/status_update.html', context)

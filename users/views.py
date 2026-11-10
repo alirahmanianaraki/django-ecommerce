@@ -31,7 +31,7 @@ def register_user(request):
             user.save()
             current_domain = get_current_site(request)
             # Email Verfication Logic
-            subject = 'Verify your email',
+            subject = 'Verify your email'
             message = render_to_string('users/email_verification.html',
                                        {
                                            'domain': current_domain,

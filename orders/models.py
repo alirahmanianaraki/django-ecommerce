@@ -81,6 +81,16 @@ class Order(models.Model):
     @property
     def is_terminal(self):
         return self.status in {self.Status.DELIVERED, self.Status.CANCELLED}
+
+    @property
+    def is_customer_cancellable(self):
+        """Customers may cancel only before we start packing"""
+        return self.status in {self.Status.PENDING, self.Status.PAID}
+
+    @property
+    def refunded_amount(self):
+        """Total already refunded for this order"""
+        return self.refunds.aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
     
 class OrderItem(models.Model):
     order = models.ForeignKey(

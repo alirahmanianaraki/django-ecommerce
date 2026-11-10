@@ -14,6 +14,7 @@ from orders.models import Order
 from .handlers import HANDLERS
 from .models import StripeWebhookEvent
 from .services import PaymentError, get_or_create_checkout_url
+from .wallet_payment import pay_order_with_wallet
 
 logger = logging.getLogger(__name__)
 
@@ -91,4 +92,16 @@ def stripe_webhook(request):
         logger.exception(f"Stripe webhook {event['id']} ({event['type']})")
         return HttpResponse(status=500)
     return HttpResponse(status=200)
+
+@require_POST
+@login_required(login_url='users:login')
+def pay_with_wallet(request, pk):
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    try:
+        pay_order_with_wallet(order.pk, actor=request.user)
+    except PaymentError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Order #{order.pk} is paid. Thank you!")
+    return redirect('orders:order_detail', pk=order.pk)
 

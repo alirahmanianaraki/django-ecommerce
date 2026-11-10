@@ -12,6 +12,9 @@ from payments.services import (
     expire_checkout_session,
     PaymentError
 )
+from payments.models import Refund
+from payments.refunds import RefundError, cancel_order_and_refund
+from wallets.services import get_balance
 from .models import Order, OrderItem
 from .services import (
     place_order,
@@ -34,7 +37,8 @@ def checkout(request):
                       {
                           'address': address,
                           'cart_length': cart_length,
-                          'cart': cart
+                          'cart': cart,
+                          'wallet_balance': get_balance(request.user)
                       })
     else:
         messages.error(request, 'You must first register or login')
@@ -85,10 +89,12 @@ def place_order_view(request):
     # except Exception as exc:
     #     logger.exception('Order confirmation email failed for order #%s', order.pk)
         
+    method = request.POST.get('payment_method', 'card')
+    url_name = 'payments:pay_with_wallet' if method == 'wallet' else 'payments:pay'
     return JsonResponse({
         'success': True,
         'order_id': order.pk,
-        'payment_url': reverse('payments:pay', kwargs={'pk': order.pk})
+        'payment_url': reverse(url_name, kwargs={'pk': order.pk}),
     })
 
 def order_success(request):
@@ -131,31 +137,21 @@ def order_detail(request, pk):
 @login_required(login_url='users:login')
 def cancel_order(request, pk):
     """
-    Customers may cancel only UNPAID orders. Cancelling a paid order needs a refund.
+    Customers can cancel unpaid or paid but not yet packed orders.
     """
-    with transaction.atomic():
-        order = get_object_or_404(
-            Order.objects.select_for_update(), pk=pk, user=request.user
+    order = get_object_or_404(Order, pk=pk, user=request.user)
+    try:
+        refund = cancel_order_and_refund(
+            order.pk, actor=request.user,
+            reason=Refund.Reason.CUSTOMER_CANCELLED,
+            note='Cancelled by customer',
         )
-        if order.status != Order.Status.PENDING:
-            messages.error(request, 'Only unpaid orders can be cancelled online')
-            return redirect('orders:order_detail', pk=pk)
+    except (PaymentError, RefundError, InvalidStatusTransition) as exc:
+        messages.error(request, str(exc))
+        return redirect('orders:order_detail', pk=pk)
 
-        try:
-            expire_checkout_session(order)
-            transition_order(
-                order, Order.Status.CANCELLED,
-                changed_by=request.user, note='Cancelled by customer'
-            )
-        except (PaymentError, InvalidStatusTransition) as exc:
-            messages.error(request, str(exc))
-            return redirect('orders:order_detail', pk=pk)
-
-    messages.success(request, f"Order #{order.pk} has been cancelled")
+    if refund:
+        messages.success(request, f"Order #{order.pk} cancelled. ${refund.amount} was refunded to your wallet")
+    else:
+        messages.success(request, f"Order #{order.pk} has been cancelled")
     return redirect('orders:order_detail', pk=pk)
-
-
-    """
-    Customer cancelled on Stripe's page, the order is still pending
-    """
-    return render(request, 'orders/stripe_cancel.html')

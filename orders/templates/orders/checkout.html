@@ -179,6 +179,22 @@
                 </div>
             </div>
 
+            <!-- Payment method -->
+            <div class="mb-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Payment method</h2>
+                <div class="bg-white/80 rounded-2xl border border-white/60 shadow-sm p-4 space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="radio" name="payment_method" value="card" checked>
+                        <span class="text-sm text-slate-800">Card or online payment (Stripe)</span>
+                    </label>
+                    <label class="flex items-center gap-3 {% if wallet_balance < cart.get_total_after_discount %}opacity-50{% else %}cursor-pointer{% endif %}">
+                        <input type="radio" name="payment_method" value="wallet"
+                               {% if wallet_balance < cart.get_total_after_discount %}disabled{% endif %}>
+                        <span class="text-sm text-slate-800">Wallet balance (${{ wallet_balance }})</span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Submit Button -->
             <button type="submit"
                     id="place-order-btn"

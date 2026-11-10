@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-pl#nv3t80)q!gkn!(kx21f0%0poqjg!8rspa83p8+z(n+pwlnv"
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'orders.apps.OrdersConfig',
     'wishlists.apps.WishlistsConfig',
     'payments.apps.PaymentsConfig',
+    'wallets.apps.WalletsConfig',
     'django_extensions',
     'django.contrib.postgres', # Enables PostgreSQL-specific features
     "django.contrib.admin",

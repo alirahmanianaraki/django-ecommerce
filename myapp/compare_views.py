@@ -74,5 +74,5 @@ def remove_from_comparison(request):
             'error': 'Product not in comparison',
             'removed': False,
             'count': len(comparison)
-        }, success=404)
+        }, status=404)
 
