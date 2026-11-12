@@ -1,0 +1,42 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Wallet top-up - VoltPC{% endblock %}
+
+{% block body %}
+<div class="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8 text-center">
+
+        {% if topup.status == 'completed' %}
+            <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center mb-5">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">${{ topup.amount }} added</h1>
+            <p class="text-sm text-slate-500 mb-6">Your wallet balance is now ${{ balance }}.</p>
+
+        {% elif topup.status == 'pending' %}
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Confirming your payment…</h1>
+            <p class="text-sm text-slate-500 mb-6">
+                This usually takes a few seconds. Some payment methods take longer; your wallet
+                will be credited as soon as the payment is confirmed, even if you leave this page.
+            </p>
+
+        {% else %}
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Top-up {{ topup.get_status_display|lower }}</h1>
+            <p class="text-sm text-slate-500 mb-6">No money was added. Please try again.</p>
+        {% endif %}
+
+        <a href="{% url 'wallets:overview' %}"
+           class="block w-full py-2.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+            Back to my wallet
+        </a>
+    </div>
+</div>
+
+{% if refresh_url %}
+<script>
+    setTimeout(function () { window.location.replace("{{ refresh_url|escapejs }}"); }, 3000);
+</script>
+{% endif %}
+{% endblock %}

@@ -10,6 +10,7 @@ from orders.services import transition_order
 from .models import Refund
 from .refunds import refund_order_to_wallet
 from .services import to_minor_units
+from . import topups
 
 logger = logging.getLogger(__name__)
 
@@ -99,9 +100,30 @@ def handle_session_expired(session):
     _cancel_if_current(session, 'Payment not completed in time (checkout expired)')
 
 
+def _is_topup(session):
+    return (session.get('metadata') or {}).get('type') == 'wallet_topup'
+
+def _on_payment_succeeded(session):
+    if _is_topup(session):
+        topups.complete_topup(session)
+    else:
+        handle_payment_succeeded(session)
+
+def _on_payment_failed(session):
+    if _is_topup(session):
+        topups.fail_topup(session)
+    else:
+        handle_payment_failed(session)
+
+def _on_session_expired(session):
+    if _is_topup(session):
+        topups.expire_topup(session)
+    else:
+        handle_session_expired(session)
+
 HANDLERS = {
-    "checkout.session.completed": handle_payment_succeeded,
-    "checkout.session.async_payment_succeeded": handle_payment_succeeded,
-    "checkout.session.async_payment_failed": handle_payment_failed,
-    "checkout.session.expired": handle_session_expired,
+    "checkout.session.completed": _on_payment_succeeded,
+    "checkout.session.async_payment_succeeded": _on_payment_succeeded,
+    "checkout.session.async_payment_failed": _on_payment_failed,
+    "checkout.session.expired": _on_session_expired,
 }

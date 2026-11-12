@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:orders_order_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; <a href="{% url 'admin:orders_order_change' order.pk %}">Order #{{ order.pk }}</a>
+    &rsaquo; Refund
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <fieldset class="module aligned">
+        <h2>Order #{{ order.pk }}</h2>
+        <div class="form-row"><div><label>Customer:</label><strong>{{ order.user }}</strong></div></div>
+        <div class="form-row"><div><label>Order total:</label><strong>${{ order.total_amount }}</strong></div></div>
+        <div class="form-row"><div><label>Already refunded:</label><strong>${{ already_refunded }}</strong></div></div>
+        <div class="form-row"><div><label>Can still refund:</label><strong>${{ remaining }}</strong></div></div>
+    </fieldset>
+
+    {% if can_refund %}
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <fieldset class="module aligned">
+            <h2>New refund (to the customer's wallet)</h2>
+            {% for field in form %}
+                <div class="form-row{% if field.errors %} errors{% endif %}">
+                    {{ field.errors }}
+                    <div>
+                        {{ field.label_tag }} {{ field }}
+                        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </fieldset>
+        <div class="submit-row">
+            <input type="submit" value="Issue refund" class="default">
+            <a href="{% url 'admin:orders_order_change' order.pk %}" class="closelink">Cancel</a>
+        </div>
+    </form>
+    {% else %}
+        <p>Nothing can be refunded on this order (it was never paid, or it is already fully refunded).</p>
+        <p><a href="{% url 'admin:orders_order_change' order.pk %}">&larr; Back to the order</a></p>
+    {% endif %}
+</div>
+{% endblock %}

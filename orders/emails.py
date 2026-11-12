@@ -16,7 +16,7 @@ def send_order_confirmation_safely(order_pk):
         order = Order.objects.select_related('user').get(pk=order_pk)
         send_order_confirmation(order)
     except Exception:
-        logger.exception(f"Order confirmation email failed for order {order.pk}")
+        logger.exception(f"Order confirmation email failed for order {order_pk}")
 
 def send_order_confirmation(order, request=None):
     """

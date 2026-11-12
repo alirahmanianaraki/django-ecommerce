@@ -179,6 +179,7 @@
                 </div>
             </div>
 
+            {% if cart.get_total_after_discount > 0 %}
             <!-- Payment method -->
             <div class="mb-6">
                 <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Payment method</h2>
@@ -194,6 +195,11 @@
                     </label>
                 </div>
             </div>
+            {% else %}
+            <div class="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-sm text-emerald-800">
+                Your order total is $0.00, so no payment is needed.
+            </div>
+            {% endif %}
 
             <!-- Submit Button -->
             <button type="submit"

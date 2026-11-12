@@ -16,6 +16,42 @@
             <p class="text-4xl font-bold mt-1">${{ balance }}</p>
         </div>
 
+        {% if pending_topups %}
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-800">
+            {% for t in pending_topups %}
+                A top-up of ${{ t.amount }} is awaiting confirmation.
+            {% endfor %}
+            Your balance will update automatically once the payment is confirmed.
+        </div>
+        {% endif %}
+
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-6 mb-8">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Add funds</h2>
+
+            <form method="POST" action="{% url 'payments:topup' %}" class="flex flex-wrap gap-2 mb-4">
+                {% csrf_token %}
+                {% for preset in presets %}
+                <button type="submit" name="amount" value="{{ preset }}"
+                        class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 font-semibold
+                               hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors">
+                    ${{ preset }}
+                </button>
+                {% endfor %}
+            </form>
+
+            <form method="POST" action="{% url 'payments:topup' %}" class="flex gap-2">
+                {% csrf_token %}
+                <input type="number" name="amount" step="0.01" min="{{ topup_min }}" max="{{ topup_max }}"
+                       placeholder="Other amount" required
+                       class="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit"
+                        class="px-5 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">
+                    Add funds
+                </button>
+            </form>
+            <p class="text-xs text-slate-400 mt-2">Between ${{ topup_min }} and ${{ topup_max }} per top-up.</p>
+        </div>
+
         <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">History</h2>
 
         {% if page_obj %}
@@ -45,7 +81,7 @@
         {% else %}
         <div class="bg-white/80 rounded-2xl border border-white/60 shadow-sm p-12 text-center">
             <p class="text-slate-600 font-medium">No wallet activity yet</p>
-            <p class="text-slate-400 text-sm mt-1">Refunds and wallet payments will show up here.</p>
+            <p class="text-slate-400 text-sm mt-1">Top-ups, refunds and wallet payments will show up here.</p>
         </div>
         {% endif %}
     </div>

@@ -92,6 +92,14 @@ def get_or_create_checkout_url(order_id):
         if order.status != Order.Status.PENDING:
             raise PaymentError('This order can no longer be paid')
 
+        if order.total_amount <= 0:
+            raise PaymentError('This order has nothing to pay.')
+        if order.total_amount < settings.STRIPE_MIN_CHARGE_AMOUNT:
+            raise PaymentError(
+                f"Card payments need an order total of at least "
+                f"${settings.STRIPE_MIN_CHARGE_AMOUNT}. Please pay with your wallet instead"
+            )
+
         if order.stripe_checkout_session_id:
             try:
                 existing = client.v1.checkout.sessions.retrieve(

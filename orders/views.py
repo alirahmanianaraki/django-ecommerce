@@ -130,7 +130,8 @@ def order_detail(request, pk):
     )
     return render(request, 'orders/order_detail.html',
                   {
-                      'order': order
+                      'order': order,
+                      'wallet_balance': get_balance(request.user)
                   })
 
 @require_POST

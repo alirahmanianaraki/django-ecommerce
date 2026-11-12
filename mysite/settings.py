@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import sys
 from dotenv import load_dotenv
+from decimal import Decimal
 
 load_dotenv()
 
@@ -172,8 +173,7 @@ MAILERS = {
     },
 }
 
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_MAIL'," \
-"VoltPC <noreply@voltpc.example>")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "VoltPC <noreply@voltpc.example>")
 
 SITE_URL = os.getenv('SITE_URL', '')
 
@@ -187,3 +187,12 @@ STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_CURRENCY = os.getenv('STRIPE_CURRENCY', 'usd')
 STRIPE_CHECKOUT_EXPIRES_MINUTES = 35
+
+# Wallet limit (all can be overridden in .env)
+
+WALLET_TOPUP_MIN_AMOUNT = Decimal(os.getenv('WALLET_TOPUP_MIN_AMOUNT', '5.00'))
+WALLET_TOPUP_MAX_AMOUNT = Decimal(os.getenv('WALLET_TOPUP_MAX_AMOUNT', '500.00'))
+WALLET_MAX_BALANCE = Decimal(os.getenv('WALLET_MAX_BALANCE', '2000.00'))
+WALLET_TOPUP_MAX_ATTEMPTS_PER_HOUR = int(os.getenv('WALLET_TOPUP_MAX_ATTEMPTS_PER_HOUR', '10'))
+# Stripe refuses card charges below this amount
+STRIPE_MIN_CHARGE_AMOUNT = Decimal(os.getenv('STRIPE_MIN_CHARGE_AMOUNT', '0.50'))
